@@ -7,6 +7,10 @@ on:
         description: 'Nome do Aplicativo'
         required: true
         default: 'MeuApp'
+      panel_url:
+        description: 'Link do Painel'
+        required: false
+        default: ''
       enviou_logo:
         description: 'Usuário enviou logo?'
         required: false
@@ -64,6 +68,7 @@ jobs:
         fi
         
         APP_NAME="${{ github.event.inputs.app_name }}"
+        PANEL_URL="${{ github.event.inputs.panel_url }}"
         
         # Cria um identificador único com base no nome digitado para evitar conflitos no Android
         APP_ID=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
@@ -76,11 +81,15 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO DE URL REMOTA (Extrai o link do iframe do index.html)
+        # CONFIGURAÇÃO DE URL DINÂMICA (Lê o link digitado no site ou extrai do iframe)
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
-          TARGET_URL=$(grep -oP 'src="\K[^"]+' www/index.html | head -n 1)
+          # Se o usuário passou o link pelo input, usa ele. Se não, tenta extrair do index.html (iframe)
+          TARGET_URL="$PANEL_URL"
+          if [ -z "$TARGET_URL" ] && [ -f "www/index.html" ]; then
+            TARGET_URL=$(grep -oP 'src="\K[^"]+' www/index.html | head -n 1)
+          fi
           
           if [ -z "$TARGET_URL" ]; then
             TARGET_URL="https://tpanel.criarsite.online/index.php"
@@ -99,36 +108,6 @@ jobs:
             };
             fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
           ' "$TARGET_URL"
-        fi
-
-        # Injeção automática do botão de voltar nativo em Python
-        MAIN_ACTIVITY="android/app/src/main/java/com/gerador/$APP_ID/MainActivity.java"
-        if [ -f "$MAIN_ACTIVITY" ]; then
-          python3 -c '
-        import glob
-        files = glob.glob("android/app/src/main/java/com/gerador/*/MainActivity.java")
-        if files:
-            path = files[0]
-            with open(path, "r") as f:
-                content = f.read()
-            
-            back_code = """
-    @Override
-    public void onBackPressed() {
-        if (this.bridge != null && this.bridge.getWebView() != null && this.bridge.getWebView().canGoBack()) {
-            this.bridge.getWebView().goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-"""
-            if "onBackPressed" not in content:
-                idx = content.rfind("}")
-                if idx != -1:
-                    content = content[:idx] + back_code + "\n}"
-                with open(path, "w") as f:
-                    f.write(content)
-          '
         fi
 
         # Aplica o nome exato no arquivo de strings nativo do Android
