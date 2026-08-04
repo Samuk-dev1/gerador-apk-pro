@@ -7,6 +7,10 @@ on:
         description: 'Nome do Aplicativo'
         required: true
         default: 'MeuApp'
+      panel_url:
+        description: 'Link do Painel'
+        required: false
+        default: ''
       enviou_logo:
         description: 'Usuário enviou logo?'
         required: false
@@ -64,6 +68,7 @@ jobs:
         fi
         
         APP_NAME="${{ github.event.inputs.app_name }}"
+        PANEL_URL="${{ github.event.inputs.panel_url }}"
         
         # Cria um identificador único com base no nome digitado para evitar conflitos no Android
         APP_ID=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
@@ -76,16 +81,25 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO DE URL REMOTA (DIRECIONA O APP DIRETO PARA O PAINEL DE IPTV)
+        # CONFIGURAÇÃO DE URL DINÂMICA (Lê o link digitado no site ou extrai do iframe)
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
-          # Adiciona o servidor remoto e libera os cookies e o zoom nativo no config do Capacitor
+          # Se o usuário passou o link pelo input, usa ele. Se não, tenta extrair do index.html (iframe)
+          TARGET_URL="$PANEL_URL"
+          if [ -z "$TARGET_URL" ] && [ -f "www/index.html" ]; then
+            TARGET_URL=$(grep -oP 'src="\K[^"]+' www/index.html | head -n 1)
+          fi
+          
+          if [ -z "$TARGET_URL" ]; then
+            TARGET_URL="https://tpanel.criarsite.online/index.php"
+          fi
+
           node -e '
             const fs = require("fs");
             let config = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8"));
             config.server = {
-              "url": "https://tpanel.criarsite.online/index.php",
+              "url": process.argv[1],
               "cleartext": true
             };
             config.android = {
@@ -93,7 +107,7 @@ jobs:
               "webContentsDebuggingEnabled": true
             };
             fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
-          '
+          ' "$TARGET_URL"
         fi
 
         # Aplica o nome exato no arquivo de strings nativo do Android
