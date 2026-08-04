@@ -85,10 +85,8 @@ jobs:
         if [ -f logo.png ]; then
           echo "Logo personalizada encontrada! Otimizando e redimensionando automaticamente..."
           
-          # Instala ferramenta leve de imagem no Ubuntu para redimensionar sem pesar o app
           sudo apt-get update && sudo apt-get install -y imagemagick > /dev/null 2>&1
           
-          # Cria os tamanhos exatos exigidos pelo Android em cada pasta mipmap
           mkdir -p android/app/src/main/res/mipmap-mdpi
           convert logo.png -resize 48x48! android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert logo.png -resize 48x48! android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
@@ -109,7 +107,6 @@ jobs:
           convert logo.png -resize 192x192! android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           convert logo.png -resize 192x192! android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-          # Remove os arquivos XML antigos do Android para forçar o uso da imagem PNG nova
           find android/app/src/main/res/ -name "ic_launcher.xml" -delete
           find android/app/src/main/res/ -name "ic_launcher_round.xml" -delete
         fi
