@@ -75,6 +75,15 @@ jobs:
         npx cap init "$APP_NAME" com.gerador.$APP_ID --web-dir www
         npx cap add android
 
+        # =========================================================================
+        # CORREÇÃO DE SESSÃO / COOKIES PARA PAINÉIS (LIBERA LOGIN NO ANDROID)
+        # =========================================================================
+        MAIN_ACTIVITY="android/app/src/main/java/com/gerador/$APP_ID/MainActivity.java"
+        if [ -f "$MAIN_ACTIVITY" ]; then
+          # Insere comandos para habilitar cookies e domínios remotos sem fechar o app
+          sed -i '/public class MainActivity extends BridgeActivity {/a \ \   @Override\n    public void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        android.webkit.CookieManager.getInstance().setAcceptCookie(true);\n        android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(bridge.getWebView(), true);\n    }' "$MAIN_ACTIVITY"
+        fi
+
         # Aplica o nome exato no arquivo de strings nativo do Android
         STRINGS_FILE="android/app/src/main/res/values/strings.xml"
         if [ -f "$STRINGS_FILE" ]; then
