@@ -7,10 +7,6 @@ on:
         description: 'Nome do Aplicativo'
         required: true
         default: 'MeuApp'
-      panel_url:
-        description: 'Link do Painel'
-        required: false
-        default: ''
       enviou_logo:
         description: 'Usuário enviou logo?'
         required: false
@@ -68,7 +64,6 @@ jobs:
         fi
         
         APP_NAME="${{ github.event.inputs.app_name }}"
-        PANEL_URL="${{ github.event.inputs.panel_url }}"
         
         # Cria um identificador único com base no nome digitado para evitar conflitos no Android
         APP_ID=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
@@ -81,14 +76,11 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO DE URL DINÂMICA
+        # CONFIGURAÇÃO DE URL REMOTA (Extrai o link do iframe do index.html)
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
-          TARGET_URL="$PANEL_URL"
-          if [ -z "$TARGET_URL" ] && [ -f "www/index.html" ]; then
-            TARGET_URL=$(grep -oP 'src="\K[^"]+' www/index.html | head -n 1)
-          fi
+          TARGET_URL=$(grep -oP 'src="\K[^"]+' www/index.html | head -n 1)
           
           if [ -z "$TARGET_URL" ]; then
             TARGET_URL="https://tpanel.criarsite.online/index.php"
@@ -109,7 +101,7 @@ jobs:
           ' "$TARGET_URL"
         fi
 
-        # Injeção limpa e corrigida do botão de voltar nativo em Python
+        # Injeção automática do botão de voltar nativo em Python
         MAIN_ACTIVITY="android/app/src/main/java/com/gerador/$APP_ID/MainActivity.java"
         if [ -f "$MAIN_ACTIVITY" ]; then
           python3 -c '
