@@ -1,1 +1,276 @@
-<div style="width:100%; height:100vh; display:flex;"><iframe src="https://tpanel.criarsite.online/index.php" allow="fullscreen; camera; microphone; geolocation; cookies"></iframe></div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CinePlay - Xtream/M3U</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #121212; color: #ffffff; }
+        .screen { display: none; width: 100vw; height: 100vh; }
+        .screen.active { display: flex; }
+
+        /* LOGIN */
+        #login-screen { justify-content: center; align-items: center; background: linear-gradient(135deg, #1f1f1f, #0a0a0a); padding: 20px; }
+        .login-card { background: #1e1e1e; padding: 30px; border-radius: 12px; width: 100%; max-width: 450px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center; }
+        .login-card h2 { margin-bottom: 5px; color: #e50914; }
+        .login-card p { color: #aaa; margin-bottom: 20px; font-size: 13px; }
+        .input-group { position: relative; margin-bottom: 12px; text-align: left; }
+        .input-group label { font-size: 12px; color: #aaa; margin-bottom: 4px; display: block; }
+        .input-group input { width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #333; border-radius: 6px; color: #fff; font-size: 14px; outline: none; }
+        .input-group input:focus { border-color: #e50914; }
+        #login-btn { width: 100%; padding: 12px; background: #e50914; border: none; border-radius: 6px; color: #fff; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        #login-btn:hover { background: #f40612; }
+        .error-msg { color: #e50914; margin-top: 15px; font-size: 13px; }
+
+        /* APP PRINCIPAL */
+        #app-screen { flex-direction: column; }
+        header { height: 70px; background: #181818; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid #282828; }
+        .logo { font-size: 22px; font-weight: bold; color: #e50914; }
+        .search-box { position: relative; width: 50%; max-width: 400px; }
+        .search-box i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #777; }
+        .search-box input { width: 100%; padding: 8px 8px 8px 38px; background: #2a2a2a; border: none; border-radius: 20px; color: #fff; outline: none; }
+        .logout-btn { background: transparent; border: none; color: #aaa; font-size: 18px; cursor: pointer; }
+        .logout-btn:hover { color: #fff; }
+
+        main { flex: 1; padding: 20px; overflow-y: auto; }
+        main h2 { margin-bottom: 20px; font-size: 20px; }
+        .movies-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .movie-card { background: #1e1e1e; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .movie-card:hover { transform: scale(1.05); }
+        .movie-card img { width: 100%; height: 200px; object-fit: cover; }
+        .movie-info { padding: 10px; }
+        .movie-info h3 { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* MODAL */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+        .modal-content { background: #1e1e1e; padding: 20px; border-radius: 10px; width: 90%; max-width: 600px; position: relative; }
+        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 28px; cursor: pointer; color: #aaa; }
+        .close-btn:hover { color: #fff; }
+        #modal-details video { width: 100%; max-height: 400px; border-radius: 6px; margin-top: 15px; background: #000; }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="login-screen" class="screen active">
+        <div class="login-card">
+            <h2><i class="fa-solid fa-film"></i> CinePlay</h2>
+            <p>Acesso via Link M3U</p>
+            
+            <div class="input-group">
+                <label>Usuário</label>
+                <input type="text" id="username" value="admin">
+            </div>
+            
+            <div class="input-group">
+                <label>Senha</label>
+                <input type="password" id="password" value="123">
+            </div>
+
+            <div class="input-group">
+                <label>Link da Lista M3U:</label>
+                <input type="text" id="m3u-url" value="Http://p2vipserver.top/get.php?username=26975447&password=34746662&type=m3u_plus&output=mpegts">
+            </div>
+
+            <button id="login-btn" onclick="fazerLogin()">Carregar Filmes</button>
+            <p id="login-error" class="error-msg"></p>
+        </div>
+    </div>
+
+    <!-- TELA PRINCIPAL -->
+    <div id="app-screen" class="screen">
+        <header>
+            <div class="logo">CinePlay</div>
+            <div class="search-box">
+                <i class="fa-solid fa-search"></i>
+                <input type="text" id="search-input" placeholder="Pesquisar filmes..." oninput="filtrarFilmes()">
+            </div>
+            <button class="logout-btn" onclick="fazerLogout()" title="Sair"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </header>
+
+        <main>
+            <h2 id="section-title">Filmes Disponíveis</h2>
+            <div id="movies-grid" class="movies-grid"></div>
+        </main>
+    </div>
+
+    <!-- MODAL DO PLAYER -->
+    <div id="player-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="fecharModal()">&times;</span>
+            <div id="modal-details"></div>
+        </div>
+    </div>
+
+    <script>
+        let listaFilmes = [];
+
+        async function fazerLogin() {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            const urlM3U = document.getElementById('m3u-url').value;
+            const errorMsg = document.getElementById('login-error');
+
+            if(user !== "admin" || pass !== "123") {
+                errorMsg.innerText = "Usuário ou senha incorretos! (Use admin / 123)";
+                return;
+            }
+
+            if(!urlM3U) {
+                errorMsg.innerText = "Insira o link da lista M3U.";
+                return;
+            }
+
+            errorMsg.innerText = "Baixando e processando lista, aguarde...";
+
+            try {
+                // Usando proxy CORS para testes locais no navegador
+                const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(urlM3U);
+                const resposta = await fetch(proxyUrl);
+                
+                if(!resposta.ok) throw new Error("Erro ao acessar o servidor.");
+                
+                const textoM3U = await resposta.text();
+                listaFilmes = parseM3UFilmes(textoM3U);
+
+                if(listaFilmes.length === 0) {
+                    errorMsg.innerText = "Nenhum filme encontrado. Verifique se o link possui a categoria de filmes.";
+                    return;
+                }
+
+                errorMsg.innerText = "";
+                document.getElementById('login-screen').classList.remove('active');
+                document.getElementById('app-screen').classList.add('active');
+                document.getElementById('section-title').innerText = `Filmes Disponíveis (${listaFilmes.length})`;
+                carregarFilmes(listaFilmes);
+
+            } catch (err) {
+                console.error(err);
+                errorMsg.innerText = "Erro ao carregar a lista. O servidor pode estar bloqueando ou o link está incorreto.";
+            }
+        }
+
+        function fazerLogout() {
+            document.getElementById('app-screen').classList.remove('active');
+            document.getElementById('login-screen').classList.add('active');
+            document.getElementById('modal-details').innerHTML = "";
+        }
+
+        // Filtra estritamente por filmes baseando-se nas tags comuns de painéis Xtream/M3U (group-title contendo movie/filme)
+        function parseM3UFilmes(conteudo) {
+            const linhas = conteudo.split('\n');
+            let filmes = [];
+            let filmeAtual = null;
+
+            for (let i = 0; i < linhas.length; i++) {
+                let linha = linhas[i].trim();
+
+                if (linha.startsWith('#EXTINF:')) {
+                    filmeAtual = {};
+                    
+                    // Pega o nome do filme (tudo após a última vírgula)
+                    let partesVirgula = linha.split(',');
+                    filmeAtual.titulo = partesVirgula.length > 1 ? partesVirgula[partesVirgula.length - 1].trim() : "Filme";
+
+                    // Pega a capa
+                    let matchLogo = linha.match(/tvg-logo="([^"]+)"/);
+                    filmeAtual.capa = (matchLogo && matchLogo[1]) ? matchLogo[1] : "https://via.placeholder.com/300x450?text=Sem+Capa";
+
+                    // Verifica se é filme pelo grupo ou se a lista inteira for de VOD
+                    let matchGroup = linha.match(/group-title="([^"]+)"/);
+                    let grupo = matchGroup ? matchGroup[1].toLowerCase() : "";
+                    
+                    // Se o grupo tiver 'filme', 'vod', 'movie' ou se não tiver grupo definido, consideraremos como filme
+                    filmeAtual.eFilme = (grupo.includes('filme') || grupo.includes('vod') || grupo.includes('movie') || grupo === "");
+                } else if (linha && !linha.startsWith('#') && filmeAtual) {
+                    filmeAtual.url = linha;
+                    // Se passou nas regras de filme e tem URL, adiciona
+                    if (filmeAtual.eFilme && filmeAtual.url) {
+                        filmes.push(filmeAtual);
+                    }
+                    filmeAtual = null;
+                }
+            }
+
+            // Se por acaso a lista veio sem tag de grupo clara, retorna todos os itens encontrados para não ficar vazio
+            if(filmes.length === 0) {
+                return parseM3UTodos(conteudo);
+            }
+
+            return filmes;
+        }
+
+        // Fallback caso o painel não use agrupamento por nome
+        function parseM3UTodos(conteudo) {
+            const linhas = conteudo.split('\n');
+            let filmes = [];
+            let filmeAtual = {};
+
+            for (let i = 0; i < linhas.length; i++) {
+                let linha = linhas[i].trim();
+                if (linha.startsWith('#EXTINF:')) {
+                    filmeAtual = {};
+                    let partes = linha.split(',');
+                    filmeAtual.titulo = partes.length > 1 ? partes[partes.length - 1].trim() : "Filme";
+                    let matchLogo = linha.match(/tvg-logo="([^"]+)"/);
+                    filmeAtual.capa = (matchLogo && matchLogo[1]) ? matchLogo[1] : "https://via.placeholder.com/300x450?text=Sem+Capa";
+                } else if (linha && !linha.startsWith('#')) {
+                    filmeAtual.url = linha;
+                    if (filmeAtual.titulo && filmeAtual.url) {
+                        filmes.push(filmeAtual);
+                    }
+                    filmeAtual = {};
+                }
+            }
+            return filmes;
+        }
+
+        function carregarFilmes(filmes) {
+            const grid = document.getElementById('movies-grid');
+            grid.innerHTML = "";
+
+            filmes.forEach((filme) => {
+                const card = document.createElement('div');
+                card.classList.add('movie-card');
+                card.innerHTML = `
+                    <img src="${filme.capa}" alt="${filme.titulo}" onerror="this.src='https://via.placeholder.com/300x450?text=Erro+Capa'">
+                    <div class="movie-info">
+                        <h3>${filme.titulo}</h3>
+                    </div>
+                `;
+                card.onclick = () => abrirFilme(filme);
+                grid.appendChild(card);
+            });
+        }
+
+        function filtrarFilmes() {
+            const termo = document.getElementById('search-input').value.toLowerCase();
+            const filtrados = listaFilmes.filter(f => f.titulo.toLowerCase().includes(termo));
+            carregarFilmes(filtrados);
+        }
+
+        function abrirFilme(filme) {
+            const modal = document.getElementById('player-modal');
+            const details = document.getElementById('modal-details');
+            
+            details.innerHTML = `
+                <h3 style="margin-bottom: 10px; font-size: 16px;">${filme.titulo}</h3>
+                <video controls autoplay>
+                    <source src="${filme.url}" type="video/mp4">
+                    Seu navegador não suporta reprodução direta deste formato.
+                </video>
+            `;
+            modal.style.display = "flex";
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('player-modal');
+            const details = document.getElementById('modal-details');
+            details.innerHTML = "";
+            modal.style.display = "none";
+        }
+    </script>
+</body>
+</html>
