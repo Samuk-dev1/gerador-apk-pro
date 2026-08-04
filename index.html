@@ -1,1 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gestor IPTV</title>
+</head>
+<body>
 
+    <!-- Menu Hamburguer -->
+    <div id="menu-toggle">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <!-- Sidebar (Menu Lateral) -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h2>IPTV Manager</h2>
+        </div>
+        <ul>
+            <li data-tab="dashboard"><span>📊</span> Dashboard</li>
+            <li data-tab="clientes"><span>👥</span> Clientes</li>
+            <li data-tab="templates"><span>💬</span> Templates Zap</li>
+            <li data-tab="ajustes"><span>⚙️</span> Ajustes</li>
+        </ul>
+    </nav>
+
+    <!-- Overlay para fechar o menu -->
+    <div id="overlay"></div>
+
+    <!-- Conteúdo Principal -->
+    <main id="main-content">
+
+        <!-- Tela Dashboard -->
+        <section id="dashboard" class="tab-content active">
+            <h1>Dashboard</h1>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-value" id="totalClientes">0</span>
+                    <span class="stat-label">Total de Clientes</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="vencimentosHoje">0</span>
+                    <span class="stat-label">Vencimentos Hoje</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="inadimplentes">0</span>
+                    <span class="stat-label">Inadimplentes</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela Clientes -->
+        <section id="clientes" class="tab-content">
+            <div class="header-actions">
+                <h1>Clientes</h1>
+                <button id="btn-novo-cliente" class="btn-primary">+ Novo</button>
+            </div>
+            <div id="lista-clientes" class="client-list">
+                <!-- Cards gerados via JS -->
+            </div>
+        </section>
+
+        <!-- Tela Templates -->
+        <section id="templates" class="tab-content">
+            <h1>Templates de Cobrança</h1>
+            <div class="template-list">
+                <div class="template-item">
+                    <p>Olá {nome}, tudo bem? Lembrando que sua assinatura IPTV vence hoje! Para renovar, clique aqui: [link]</p>
+                    <button class="btn-copy" data-text="Olá {nome}, tudo bem? Lembrando que sua assinatura IPTV vence hoje! Para renovar, clique aqui: [link]">Copiar</button>
+                </div>
+                <div class="template-item">
+                    <p>Olá {nome}, sua mensalidade está em atraso. Por favor, realize o pagamento para não ter o serviço interrompido. Obrigado!</p>
+                    <button class="btn-copy" data-text="Olá {nome}, sua mensalidade está em atraso. Por favor, realize o pagamento para não ter o serviço interrompido. Obrigado!">Copiar</button>
+                </div>
+                <div class="template-item">
+                    <p>Olá {nome}, estamos com uma promoção! Renove sua assinatura por mais 30 dias com 10% de desconto. Válido hoje!</p>
+                    <button class="btn-copy" data-text="Olá {nome}, estamos com uma promoção! Renove sua assinatura por mais 30 dias com 10% de desconto. Válido hoje!">Copiar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela Ajustes -->
+        <section id="ajustes" class="tab-content">
+            <h1>Ajustes</h1>
+            <p>Configurações gerais do aplicativo em breve.</p>
+        </section>
+    </main>
+
+    <!-- Modal de Cadastro/Edição -->
+    <div id="modal-cadastro" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2 id="modal-title">Novo Cliente</h2>
+            <form id="form-cliente">
+                <input type="hidden" id="cliente-id">
+                
+                <div class="form-group">
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" id="nome" placeholder="Digite o nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="telefone">Telefone (WhatsApp)</label>
+                    <input type="tel" id="telefone" placeholder="(11) 99999-9999" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mac">Endereço MAC</label>
+                    <input type="text" id="mac" placeholder="AA:BB:CC:DD:EE:FF" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="data_vencimento">Data de Vencimento</label>
+                    <input type="date" id="data_vencimento" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Status</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="status" value="Ativo" checked> Ativo</label>
+                        <label><input type="radio" name="status" value="Inativo"> Inativo</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary btn-full">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
