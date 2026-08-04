@@ -1,0 +1,129 @@
+name: Gerar APK Profissional
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Nome do Aplicativo'
+        required: true
+        default: 'MeuApp'
+      enviou_logo:
+        description: 'Usuário enviou logo?'
+        required: false
+        default: 'nao'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Baixar codigo do projeto
+      uses: actions/checkout@v4
+
+    - name: Configurar Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Configurar Java 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Preparar Ambiente e Gerar
+      run: |
+        npm init -y
+        
+        # Versão 5 Estável do Capacitor
+        npm install @capacitor/core@5 @capacitor/android@5 @capacitor/cli@5
+        
+        # Monta a estrutura da WEB para o App
+        mkdir -p www
+        
+        # Copia os 3 arquivos essenciais se eles existirem
+        if [ -f index.html ]; then cp index.html www/index.html; else touch www/index.html; fi
+        if [ -f style.css ]; then cp style.css www/style.css; else touch www/style.css; fi
+        if [ -f script.js ]; then cp script.js www/script.js; else touch www/script.js; fi
+
+        # Inteligência do Robô: Se os arquivos foram enviados, mas o HTML não conectou eles, 
+        # o robô insere as tags automaticamente na aba <head> e antes de fechar </body>
+        if grep -q "<head>" www/index.html && ! grep -q "style.css" www/index.html; then
+            sed -i 's|<head>|<head>\n    <link rel="stylesheet" href="style.css">|' www/index.html
+        fi
+        
+        if grep -q "</body>" www/index.html && ! grep -q "script.js" www/index.html; then
+            sed -i 's|</body>|    <script src="script.js"></script>\n</body>|' www/index.html
+        fi
+
+        # Controle de exclusão da Logo
+        ENVIOU_LOGO="${{ github.event.inputs.enviou_logo }}"
+        if [ "$ENVIOU_LOGO" = "nao" ]; then
+          echo "Nenhuma logo nova foi enviada. Limpando a logo do cliente anterior..."
+          rm -f logo.png
+        fi
+        
+        APP_NAME="${{ github.event.inputs.app_name }}"
+        
+        # Cria um identificador único com base no nome digitado para evitar conflitos no Android
+        APP_ID=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
+        if [ -z "$APP_ID" ]; then
+          APP_ID="app"
+        fi
+        
+        # Inicializa o Capacitor usando o ID único gerado
+        npx cap init "$APP_NAME" com.gerador.$APP_ID --web-dir www
+        npx cap add android
+
+        # Aplica o nome exato no arquivo de strings nativo do Android
+        STRINGS_FILE="android/app/src/main/res/values/strings.xml"
+        if [ -f "$STRINGS_FILE" ]; then
+          sed -i "s/<string name=\"app_name\">.*<\/string>/<string name=\"app_name\">$APP_NAME<\/string>/" "$STRINGS_FILE"
+        fi
+
+        # Se o usuário enviou uma logo nova, ajusta ela automaticamente para o padrão de ícones do Android
+        if [ -f logo.png ]; then
+          echo "Logo personalizada encontrada! Otimizando e redimensionando automaticamente..."
+          
+          # Instala ferramenta leve de imagem no Ubuntu para redimensionar sem pesar o app
+          sudo apt-get update && sudo apt-get install -y imagemagick > /dev/null 2>&1
+          
+          # Cria os tamanhos exatos exigidos pelo Android em cada pasta mipmap
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          convert logo.png -resize 48x48! android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert logo.png -resize 48x48! android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          convert logo.png -resize 72x72! android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert logo.png -resize 72x72! android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          convert logo.png -resize 96x96! android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert logo.png -resize 96x96! android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          convert logo.png -resize 144x144! android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert logo.png -resize 144x144! android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          convert logo.png -resize 192x192! android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          convert logo.png -resize 192x192! android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
+          # Remove os arquivos XML antigos do Android para forçar o uso da imagem PNG nova
+          find android/app/src/main/res/ -name "ic_launcher.xml" -delete
+          find android/app/src/main/res/ -name "ic_launcher_round.xml" -delete
+        fi
+
+        npx cap sync android
+
+    - name: Compilar APK de Debug
+      run: |
+        cd android
+        ./gradlew assembleDebug
+
+    - name: Salvar o APK gerado
+      uses: actions/upload-artifact@v4
+      with:
+        name: meu-aplicativo-apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 1
