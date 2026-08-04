@@ -39,8 +39,8 @@ jobs:
       run: |
         npm init -y
         
-        # Versão 5 Estável do Capacitor
-        npm install @capacitor/core@5 @capacitor/android@5 @capacitor/cli@5
+        # Versão 5 Estável do Capacitor + Plugin nativo do App (Para o botão de voltar funcionar)
+        npm install @capacitor/core@5 @capacitor/android@5 @capacitor/cli@5 @capacitor/app@5
         
         # Monta a estrutura da WEB para o App
         mkdir -p www
@@ -58,6 +58,20 @@ jobs:
         
         if grep -q "</body>" www/index.html && ! grep -q "script.js" www/index.html; then
             sed -i 's|</body>|    <script src="script.js"></script>\n</body>|' www/index.html
+        fi
+
+        # Injeção automática do script JS do botão de voltar se não houver um script personalizado
+        if ! grep -q "backButton" www/script.js; then
+            echo "
+import { App } from '@capacitor/app';
+App.addListener('backButton', () => {
+    if (window.location.pathname !== '/' && window.history.length > 1) {
+        window.history.back();
+    } else {
+        App.exitApp();
+    }
+});
+" >> www/script.js
         fi
 
         # Controle de exclusão da Logo
@@ -81,7 +95,7 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO DE URL DINÂMICA E SUPORTE AO HISTÓRICO DO ANDROID
+        # CONFIGURAÇÃO DE URL DINÂMICA
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
