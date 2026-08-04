@@ -81,7 +81,7 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO DE URL DINÂMICA E BOTÃO DE VOLTAR NATIVO (ANDROID)
+        # CONFIGURAÇÃO DE URL DINÂMICA
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
@@ -109,31 +109,32 @@ jobs:
           ' "$TARGET_URL"
         fi
 
-        # Injeção automática para o botão de voltar do celular navegar no histórico do WebView
+        # Injeção limpa e corrigida do botão de voltar nativo em Python
         MAIN_ACTIVITY="android/app/src/main/java/com/gerador/$APP_ID/MainActivity.java"
         if [ -f "$MAIN_ACTIVITY" ]; then
           python3 -c '
-            with open("'$MAIN_ACTIVITY'", "r") as f:
+        import glob
+        files = glob.glob("android/app/src/main/java/com/gerador/*/MainActivity.java")
+        if files:
+            path = files[0]
+            with open(path, "r") as f:
                 content = f.read()
             
-            # Adiciona o método onBackPressed logo antes da última chave fechadora
             back_code = """
-                @Override
-                public void onBackPressed() {
-                    if (this.bridge != null && this.bridge.getWebView() != null && this.bridge.getWebView().canGoBack()) {
-                        this.bridge.getWebView().goBack();
-                    } else {
-                        super.onBackPressed();
-                    }
-                }
-            """
-            
+    @Override
+    public void onBackPressed() {
+        if (this.bridge != null && this.bridge.getWebView() != null && this.bridge.getWebView().canGoBack()) {
+            this.bridge.getWebView().goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+"""
             if "onBackPressed" not in content:
-                # Insere antes da última chave
                 idx = content.rfind("}")
                 if idx != -1:
                     content = content[:idx] + back_code + "\n}"
-                with open("'$MAIN_ACTIVITY'", "w") as f:
+                with open(path, "w") as f:
                     f.write(content)
           '
         fi
