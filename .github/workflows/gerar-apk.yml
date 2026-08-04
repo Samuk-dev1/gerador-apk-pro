@@ -81,11 +81,10 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO DE URL DINÂMICA (Lê o link digitado no site ou extrai do iframe)
+        # CONFIGURAÇÃO DE URL DINÂMICA E SUPORTE AO HISTÓRICO DO ANDROID
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
-          # Se o usuário passou o link pelo input, usa ele. Se não, tenta extrair do index.html (iframe)
           TARGET_URL="$PANEL_URL"
           if [ -z "$TARGET_URL" ] && [ -f "www/index.html" ]; then
             TARGET_URL=$(grep -oP 'src="\K[^"]+' www/index.html | head -n 1)
