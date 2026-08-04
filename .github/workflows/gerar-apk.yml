@@ -81,11 +81,10 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO DE URL DINÂMICA (Lê o link digitado no site ou extrai do iframe)
+        # CONFIGURAÇÃO DE URL DINÂMICA E BOTÃO DE VOLTAR NATIVO (ANDROID)
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
-          # Se o usuário passou o link pelo input, usa ele. Se não, tenta extrair do index.html (iframe)
           TARGET_URL="$PANEL_URL"
           if [ -z "$TARGET_URL" ] && [ -f "www/index.html" ]; then
             TARGET_URL=$(grep -oP 'src="\K[^"]+' www/index.html | head -n 1)
@@ -108,6 +107,35 @@ jobs:
             };
             fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
           ' "$TARGET_URL"
+        fi
+
+        # Injeção automática para o botão de voltar do celular navegar no histórico do WebView
+        MAIN_ACTIVITY="android/app/src/main/java/com/gerador/$APP_ID/MainActivity.java"
+        if [ -f "$MAIN_ACTIVITY" ]; then
+          python3 -c '
+            with open("'$MAIN_ACTIVITY'", "r") as f:
+                content = f.read()
+            
+            # Adiciona o método onBackPressed logo antes da última chave fechadora
+            back_code = """
+                @Override
+                public void onBackPressed() {
+                    if (this.bridge != null && this.bridge.getWebView() != null && this.bridge.getWebView().canGoBack()) {
+                        this.bridge.getWebView().goBack();
+                    } else {
+                        super.onBackPressed();
+                    }
+                }
+            """
+            
+            if "onBackPressed" not in content:
+                # Insere antes da última chave
+                idx = content.rfind("}")
+                if idx != -1:
+                    content = content[:idx] + back_code + "\n}"
+                with open("'$MAIN_ACTIVITY'", "w") as f:
+                    f.write(content)
+          '
         fi
 
         # Aplica o nome exato no arquivo de strings nativo do Android
