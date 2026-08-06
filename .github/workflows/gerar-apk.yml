@@ -1,4 +1,4 @@
-]name: Gerar APK Profissional
+name: Gerar APK Profissional
 
 on:
   workflow_dispatch:
@@ -15,18 +15,6 @@ on:
         description: 'Usuário enviou logo?'
         required: false
         default: 'nao'
-        type: choice
-        options:
-          - 'sim'
-          - 'nao'
-      build_type:
-        description: 'Tipo de Build'
-        required: false
-        default: 'debug'
-        type: choice
-        options:
-          - 'debug'
-          - 'release'
 
 jobs:
   build:
@@ -47,165 +35,36 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Validar inputs
-      run: |
-        # Validar nome do app
-        if [ -z "${{ github.event.inputs.app_name }}" ] || [ "${{ github.event.inputs.app_name }}" = "MeuApp" ]; then
-          echo "⚠️ ERRO: Nome do aplicativo não informado ou usando valor padrão!"
-          echo "Por favor, informe um nome válido para o aplicativo."
-          exit 1
-        fi
-
-        # Validar se o nome contém apenas caracteres permitidos
-        if echo "${{ github.event.inputs.app_name }}" | grep -q '[^a-zA-Z0-9áéíóúâêîôûç ]'; then
-          echo "⚠️ ERRO: Nome do aplicativo contém caracteres especiais não permitidos!"
-          echo "Use apenas letras, números e espaços."
-          exit 1
-        fi
-
-        echo "✅ Validações concluídas com sucesso!"
-
     - name: Preparar Ambiente e Gerar
       run: |
         npm init -y
         
-        # Instalar dependências necessárias
-        echo "📦 Instalando dependências..."
+        # Versão 5 Estável do Capacitor
         npm install @capacitor/core@5 @capacitor/android@5 @capacitor/cli@5
-        
-        # Instalar jsdom para manipulação DOM
-        npm install jsdom
         
         # Monta a estrutura da WEB para o App
         mkdir -p www
         
-        echo "📄 Verificando arquivos web..."
         # Copia os 3 arquivos essenciais se eles existirem
-        if [ -f index.html ]; then 
-          echo "✅ index.html encontrado"
-          cp index.html www/index.html
-        else 
-          echo "⚠️ index.html não encontrado, criando arquivo vazio"
-          touch www/index.html
-          cat > www/index.html << 'EOF'
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{APP_NAME}}</title>
-</head>
-<body>
-    <div style="text-align: center; padding: 20px;">
-        <h1>{{APP_NAME}}</h1>
-        <p>Aplicativo gerado com Capacitor</p>
-    </div>
-</body>
-</html>
-EOF
-          # Substituir placeholder pelo nome do app
-          sed -i "s/{{APP_NAME}}/${{ github.event.inputs.app_name }}/g" www/index.html
-        fi
+        if [ -f index.html ]; then cp index.html www/index.html; else touch www/index.html; fi
+        if [ -f style.css ]; then cp style.css www/style.css; else touch www/style.css; fi
+        if [ -f script.js ]; then cp script.js www/script.js; else touch www/script.js; fi
 
-        if [ -f style.css ]; then 
-          echo "✅ style.css encontrado"
-          cp style.css www/style.css
-        else 
-          echo "⚠️ style.css não encontrado, criando arquivo vazio"
-          touch www/style.css
+        # Inteligência do Robô: Se os arquivos foram enviados, mas o HTML não conectou eles, 
+        # o robô insere as tags automaticamente na aba <head> e antes de fechar </body>
+        if grep -q "<head>" www/index.html && ! grep -q "style.css" www/index.html; then
+            sed -i 's|<head>|<head>\n    <link rel="stylesheet" href="style.css">|' www/index.html
         fi
-
-        if [ -f script.js ]; then 
-          echo "✅ script.js encontrado"
-          cp script.js www/script.js
-        else 
-          echo "⚠️ script.js não encontrado, criando arquivo vazio"
-          touch www/script.js
+        
+        if grep -q "</body>" www/index.html && ! grep -q "script.js" www/index.html; then
+            sed -i 's|</body>|    <script src="script.js"></script>\n</body>|' www/index.html
         fi
-
-        # Manipulação DOM avançada usando node com jsdom
-        echo "🔧 Realizando manipulação DOM automática..."
-        node -e '
-          const fs = require("fs");
-          const { JSDOM } = require("jsdom");
-          
-          try {
-            const htmlPath = "www/index.html";
-            if (!fs.existsSync(htmlPath)) {
-              console.log("⚠️ index.html não encontrado, pulando manipulação DOM");
-              process.exit(0);
-            }
-            
-            const html = fs.readFileSync(htmlPath, "utf8");
-            const dom = new JSDOM(html);
-            const document = dom.window.document;
-            let modified = false;
-            
-            // Verificar e adicionar CSS
-            const styleLink = document.querySelector("link[rel=\"stylesheet\"][href=\"style.css\"]");
-            if (!styleLink && fs.existsSync("www/style.css")) {
-              const link = document.createElement("link");
-              link.rel = "stylesheet";
-              link.href = "style.css";
-              const head = document.querySelector("head");
-              if (head) {
-                head.appendChild(link);
-                modified = true;
-                console.log("✅ CSS injetado automaticamente");
-              }
-            }
-            
-            // Verificar e adicionar JS
-            const scriptTag = document.querySelector("script[src=\"script.js\"]");
-            if (!scriptTag && fs.existsSync("www/script.js")) {
-              const script = document.createElement("script");
-              script.src = "script.js";
-              const body = document.querySelector("body");
-              if (body) {
-                body.appendChild(script);
-                modified = true;
-                console.log("✅ JavaScript injetado automaticamente");
-              }
-            }
-            
-            if (modified) {
-              fs.writeFileSync(htmlPath, dom.serialize());
-              console.log("✅ HTML atualizado com tags automáticas");
-            } else {
-              console.log("✅ HTML já está correto, nenhuma modificação necessária");
-            }
-          } catch (error) {
-            console.error("⚠️ Erro na manipulação DOM:", error.message);
-            // Tentar método alternativo com sed
-            console.log("🔄 Tentando método alternativo com sed...");
-            try {
-              execSync("sed -i \'s|<head>|<head>\\n    <link rel=\"stylesheet\" href=\"style.css\">|\' www/index.html");
-              execSync("sed -i \'s|</body>|    <script src=\"script.js\"></script>\\n</body>|\' www/index.html");
-              console.log("✅ CSS e JS injetados com sed");
-            } catch (sedError) {
-              console.log("⚠️ Erro no método alternativo:", sedError.message);
-            }
-          }
-        '
 
         # Controle de exclusão da Logo
         ENVIOU_LOGO="${{ github.event.inputs.enviou_logo }}"
         if [ "$ENVIOU_LOGO" = "nao" ]; then
-          echo "📸 Nenhuma logo nova foi enviada. Limpando a logo do cliente anterior..."
-          if [ -f logo.png ]; then
-            rm -f logo.png
-            echo "✅ Logo removida"
-          else
-            echo "ℹ️ Nenhuma logo encontrada para remover"
-          fi
-        else
-          echo "📸 Verificando se logo.png foi enviada..."
-          if [ ! -f logo.png ]; then
-            echo "⚠️ ERRO: Você indicou que enviou a logo, mas o arquivo logo.png não foi encontrado!"
-            echo "Por favor, envie o arquivo com o nome 'logo.png' no repositório."
-            exit 1
-          fi
-          echo "✅ Logo encontrada e será processada"
+          echo "Nenhuma logo nova foi enviada. Limpando a logo do cliente anterior..."
+          rm -f logo.png
         fi
         
         APP_NAME="${{ github.event.inputs.app_name }}"
@@ -215,217 +74,88 @@ EOF
         APP_ID=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
         if [ -z "$APP_ID" ]; then
           APP_ID="app"
-          echo "⚠️ ID gerado vazio, usando 'app' como fallback"
         fi
-        
-        echo "📱 Inicializando projeto Capacitor..."
-        echo "Nome do App: $APP_NAME"
-        echo "ID do App: com.gerador.$APP_ID"
         
         # Inicializa o Capacitor usando o ID único gerado
         npx cap init "$APP_NAME" com.gerador.$APP_ID --web-dir www
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO DE URL DINÂMICA
+        # CONFIGURAÇÃO DE URL DINÂMICA (Lê o link digitado no site ou extrai do iframe)
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
-          echo "🔗 Configurando URL do painel..."
-          
-          # Se o usuário passou o link pelo input, usa ele
+          # Se o usuário passou o link pelo input, usa ele. Se não, tenta extrair do index.html (iframe)
           TARGET_URL="$PANEL_URL"
-          
-          # Se não, tenta extrair do index.html (iframe) com método robusto
           if [ -z "$TARGET_URL" ] && [ -f "www/index.html" ]; then
-            echo "🔍 Extraindo URL do HTML..."
-            # Método usando node para extrair URL do iframe
-            TARGET_URL=$(node -e '
-              const fs = require("fs");
-              const { JSDOM } = require("jsdom");
-              try {
-                const html = fs.readFileSync("www/index.html", "utf8");
-                const dom = new JSDOM(html);
-                const iframe = dom.window.document.querySelector("iframe");
-                if (iframe && iframe.src) {
-                  console.log(iframe.src);
-                } else {
-                  // Tentar com regex
-                  const match = html.match(/src="([^"]+)"/);
-                  if (match) {
-                    console.log(match[1]);
-                  }
-                }
-              } catch (e) {
-                // Silêncio em caso de erro
-              }
-            ')
+            TARGET_URL=$(grep -oP 'src="\K[^"]+' www/index.html | head -n 1)
           fi
           
-          # URL padrão se nada for encontrado
           if [ -z "$TARGET_URL" ]; then
             TARGET_URL="https://tpanel.criarsite.online/index.php"
-            echo "ℹ️ Nenhuma URL encontrada, usando URL padrão: $TARGET_URL"
-          else
-            echo "✅ URL encontrada: $TARGET_URL"
-          fi
-          
-          # Validar se a URL é válida
-          if echo "$TARGET_URL" | grep -q '^https\?://'; then
-            echo "✅ URL válida"
-          else
-            echo "⚠️ URL não parece válida (deve começar com http:// ou https://)"
-            echo "URL: $TARGET_URL"
           fi
 
-          # Configurar Capacitor com a URL encontrada
           node -e '
             const fs = require("fs");
             let config = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8"));
             config.server = {
               "url": process.argv[1],
-              "cleartext": process.argv[2] === "true"
+              "cleartext": true
             };
             config.android = {
               "allowMixedContent": true,
               "webContentsDebuggingEnabled": true
             };
             fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
-          ' "$TARGET_URL" "true"
+          ' "$TARGET_URL"
         fi
 
         # Aplica o nome exato no arquivo de strings nativo do Android
         STRINGS_FILE="android/app/src/main/res/values/strings.xml"
         if [ -f "$STRINGS_FILE" ]; then
-          echo "📝 Atualizando nome do app no Android..."
           sed -i "s/<string name=\"app_name\">.*<\/string>/<string name=\"app_name\">$APP_NAME<\/string>/" "$STRINGS_FILE"
-          echo "✅ Nome do app atualizado: $APP_NAME"
         fi
 
         # Se o usuário enviou uma logo nova, ajusta ela automaticamente para o padrão de ícones do Android
-        if [ -f logo.png ] && [ "$ENVIOU_LOGO" = "sim" ]; then
-          echo "🎨 Logo personalizada encontrada! Otimizando e redimensionando automaticamente..."
+        if [ -f logo.png ]; then
+          echo "Logo personalizada encontrada! Otimizando e redimensionando automaticamente..."
           
-          # Instalar ImageMagick
           sudo apt-get update && sudo apt-get install -y imagemagick > /dev/null 2>&1
           
-          # Verificar se a imagem é válida
-          if ! identify logo.png > /dev/null 2>&1; then
-            echo "⚠️ ERRO: logo.png não é uma imagem PNG válida!"
-            exit 1
-          fi
-          
-          # Criar diretórios e redimensionar
-          SIZES=("mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192")
-          for size in "${SIZES[@]}"; do
-            DENSITY=${size%%:*}
-            PIXELS=${size##*:}
-            
-            echo "🔄 Processando $DENSITY ($PIXELS px)..."
-            mkdir -p "android/app/src/main/res/mipmap-$DENSITY"
-            
-            # Converter e redimensionar
-            convert logo.png -resize "${PIXELS}x${PIXELS}!" -background none "android/app/src/main/res/mipmap-$DENSITY/ic_launcher.png"
-            convert logo.png -resize "${PIXELS}x${PIXELS}!" -background none "android/app/src/main/res/mipmap-$DENSITY/ic_launcher_round.png"
-            
-            echo "✅ Ícones $DENSITY criados"
-          done
-          
-          # Remover arquivos XML de ícone que podem conflitar
-          find android/app/src/main/res/ -name "ic_launcher.xml" -delete 2>/dev/null || true
-          find android/app/src/main/res/ -name "ic_launcher_round.xml" -delete 2>/dev/null || true
-          
-          echo "✅ Todos os ícones foram gerados com sucesso!"
-        else
-          echo "ℹ️ Usando ícones padrão do Capacitor"
+          mkdir -p android/app/src/main/res/mipmap-mdpi
+          convert logo.png -resize 48x48! android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert logo.png -resize 48x48! android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+
+          mkdir -p android/app/src/main/res/mipmap-hdpi
+          convert logo.png -resize 72x72! android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert logo.png -resize 72x72! android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+
+          mkdir -p android/app/src/main/res/mipmap-xhdpi
+          convert logo.png -resize 96x96! android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert logo.png -resize 96x96! android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+
+          mkdir -p android/app/src/main/res/mipmap-xxhdpi
+          convert logo.png -resize 144x144! android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert logo.png -resize 144x144! android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+
+          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+          convert logo.png -resize 192x192! android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          convert logo.png -resize 192x192! android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
+          find android/app/src/main/res/ -name "ic_launcher.xml" -delete
+          find android/app/src/main/res/ -name "ic_launcher_round.xml" -delete
         fi
 
-        # Sincronizar Capacitor
-        echo "🔄 Sincronizando Capacitor com Android..."
         npx cap sync android
-        echo "✅ Sincronização concluída!"
 
-    - name: Compilar APK
+    - name: Compilar APK de Debug
       run: |
         cd android
-        
-        BUILD_TYPE="${{ github.event.inputs.build_type }}"
-        
-        if [ "$BUILD_TYPE" = "release" ]; then
-          echo "🔨 Compilando APK de Release..."
-          ./gradlew assembleRelease
-          APK_PATH="app/build/outputs/apk/release/app-release-unsigned.apk"
-        else
-          echo "🔨 Compilando APK de Debug..."
-          ./gradlew assembleDebug
-          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
-        fi
-        
-        echo "✅ Compilação concluída!"
-        echo "📁 APK gerado em: $APK_PATH"
-
-    - name: Verificar APK gerado
-      run: |
-        APK_FILE="android/app/build/outputs/apk/${{ github.event.inputs.build_type }}/app-${{ github.event.inputs.build_type }}.apk"
-        if [ -f "$APK_FILE" ]; then
-          APK_SIZE=$(du -h "$APK_FILE" | cut -f1)
-          echo "✅ APK gerado com sucesso! Tamanho: $APK_SIZE"
-          echo "📁 Localização: $APK_FILE"
-        else
-          echo "⚠️ ERRO: APK não foi gerado!"
-          echo "Verifique o log de build para mais detalhes."
-          exit 1
-        fi
+        ./gradlew assembleDebug
 
     - name: Salvar o APK gerado
       uses: actions/upload-artifact@v4
       with:
-        name: "${{ github.event.inputs.app_name }}-${{ github.event.inputs.build_type }}-apk"
-        path: android/app/build/outputs/apk/${{ github.event.inputs.build_type }}/app-${{ github.event.inputs.build_type }}.apk
+        name: meu-aplicativo-apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 1
-        if-no-files-found: error
-
-    - name: Notificar conclusão
-      if: success()
-      run: |
-        echo "🎉 ✅ APK gerado com sucesso!"
-        echo "📱 Nome do App: ${{ github.event.inputs.app_name }}"
-        echo "🔧 Tipo de Build: ${{ github.event.inputs.build_type }}"
-        echo "📁 Artifact disponível para download na seção 'Actions'"
-        
-        # Limpar artefatos antigos
-        echo "🧹 Limpando artefatos antigos..."
-
-    - name: Limpar artefatos antigos
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const { owner, repo } = context.repo;
-          
-          // Listar todos os artefatos
-          const artifacts = await github.rest.actions.listArtifactsForRepo({
-            owner,
-            repo,
-            per_page: 100
-          });
-          
-          // Filtrar artefatos antigos (exceto o atual)
-          const currentArtifact = context.payload.workflow_run?.id;
-          
-          for (const artifact of artifacts.data.artifacts) {
-            if (artifact.id !== currentArtifact) {
-              // Manter apenas os últimos 5 artefatos
-              if (artifact.id > 0) {
-                try {
-                  await github.rest.actions.deleteArtifact({
-                    owner,
-                    repo,
-                    artifact_id: artifact.id
-                  });
-                  console.log(`✅ Artefato ${artifact.id} deletado`);
-                } catch (error) {
-                  console.log(`⚠️ Erro ao deletar artefato ${artifact.id}: ${error.message}`);
-                }
-              }
-            }
-          }
