@@ -2,350 +2,2730 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Samuk Games Retro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a2634">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>FiadoPro - Sistema de Vendas</title>
+    
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --primary: #eab308;
-            --primary-hover: #ca8a04;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-        }
-
+        /* CSS Reset e Variáveis */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #1a2634;
+            --primary-light: #2c3e50;
+            --secondary: #3498db;
+            --secondary-dark: #2980b9;
+            --success: #27ae60;
+            --success-light: #2ecc71;
+            --danger: #e74c3c;
+            --danger-light: #f1948a;
+            --warning: #f39c12;
+            --warning-light: #f7dc6f;
+            --info: #3498db;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --text-light: #95a5a6;
+            --border-radius: 16px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 30px rgba(0,0,0,0.12);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --sidebar-width: 260px;
+            --topbar-height: 70px;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --primary: #0f1724;
+            --primary-light: #1a2634;
+            --bg: #1a1a2e;
+            --card-bg: #2d2d44;
+            --text-primary: #e8e8e8;
+            --text-secondary: #b0b0b0;
+            --text-light: #888;
+            --shadow: 0 4px 20px rgba(0,0,0,0.3);
+            --shadow-hover: 0 8px 30px rgba(0,0,0,0.4);
         }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        header {
-            background-color: #020617;
-            padding: 1.5rem 2rem;
-            text-align: center;
-            border-bottom: 2px solid var(--primary);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        /* Scrollbar Customizada */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
         }
 
-        header h1 {
-            font-size: 2.5rem;
-            color: var(--primary);
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--secondary);
+            border-radius: 10px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-brand {
+            padding: 25px 25px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .sidebar-brand .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--secondary);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
+        .sidebar-brand h2 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 30%, #3498db 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-brand small {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            -webkit-text-fill-color: rgba(255,255,255,0.5);
+            display: block;
+            font-weight: 400;
+        }
+
+        .sidebar-menu {
+            padding: 15px 15px 20px;
+        }
+
+        .sidebar-menu .menu-label {
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            letter-spacing: 1px;
+            color: rgba(255,255,255,0.3);
+            padding: 15px 15px 10px;
+            font-weight: 600;
         }
 
-        header p {
-            color: var(--text-muted);
-            margin-top: 0.5rem;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        .section-title {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            border-left: 4px solid var(--primary);
-            padding-left: 10px;
-        }
-
-        .games-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .game-card {
-            background-color: var(--card-bg);
+        .sidebar-menu .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            margin: 4px 0;
             border-radius: 12px;
-            overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(234, 179, 8, 0.2);
-        }
-
-        .game-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-bottom: 2px solid #334155;
-        }
-
-        .game-info {
-            padding: 1rem;
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .game-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            line-height: 1.2;
-        }
-
-        .game-genre {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        .play-btn {
-            margin-top: auto;
-            background-color: var(--primary);
-            color: #000;
-            border: none;
-            padding: 0.75rem;
-            border-radius: 6px;
-            font-weight: bold;
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            transition: var(--transition);
             cursor: pointer;
-            transition: background-color 0.2s;
+            gap: 15px;
+            position: relative;
+        }
+
+        .sidebar-menu .menu-item:hover {
+            background: rgba(255,255,255,0.08);
+            color: white;
+            transform: translateX(3px);
+        }
+
+        .sidebar-menu .menu-item.active {
+            background: var(--secondary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .sidebar-menu .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 30px;
+            background: white;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .sidebar-menu .menu-item i {
+            font-size: 18px;
+            width: 28px;
+            text-align: center;
+        }
+
+        .sidebar-menu .menu-item .badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 20px 30px 30px;
+            min-height: 100vh;
+        }
+
+        /* Top Bar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--card-bg);
+            padding: 15px 25px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+            height: var(--topbar-height);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .topbar .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 22px;
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .topbar .search-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg);
+            padding: 8px 18px;
+            border-radius: 30px;
+            flex: 1;
+            max-width: 350px;
+            border: 1px solid transparent;
+            transition: var(--transition);
+        }
+
+        .topbar .search-box:focus-within {
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .topbar .search-box input {
+            border: none;
+            background: transparent;
+            padding: 8px 0;
+            outline: none;
+            flex: 1;
+            font-size: 14px;
+            color: var(--text-primary);
+            width: 100%;
+        }
+
+        .topbar .search-box input::placeholder {
+            color: var(--text-light);
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .topbar .theme-toggle {
+            background: var(--bg);
+            border: none;
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .topbar .theme-toggle:hover {
+            transform: rotate(30deg);
+        }
+
+        .topbar .notification-btn {
+            position: relative;
+            background: var(--bg);
+            border: none;
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .topbar .notification-btn .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--danger);
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 50%;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .topbar .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 4px 12px 4px 4px;
+            border-radius: 30px;
+            background: var(--bg);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .topbar .user-profile:hover {
+            background: rgba(52, 152, 219, 0.1);
+        }
+
+        .topbar .user-profile img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--secondary);
+        }
+
+        .topbar .user-profile .user-name {
+            font-weight: 500;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 22px 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--secondary), var(--success));
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .stat-card:hover::before {
+            opacity: 1;
+        }
+
+        .stat-card .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-card .stat-header .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .stat-card .stat-header .stat-icon.blue {
+            background: rgba(52, 152, 219, 0.15);
+            color: var(--secondary);
+        }
+
+        .stat-card .stat-header .stat-icon.green {
+            background: rgba(39, 174, 96, 0.15);
+            color: var(--success);
+        }
+
+        .stat-card .stat-header .stat-icon.yellow {
+            background: rgba(243, 156, 18, 0.15);
+            color: var(--warning);
+        }
+
+        .stat-card .stat-header .stat-icon.red {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--danger);
+        }
+
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--text-primary);
+            letter-spacing: -0.5px;
+        }
+
+        .stat-card .stat-label {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .stat-card .stat-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .stat-change.positive {
+            background: rgba(39, 174, 96, 0.15);
+            color: var(--success);
+        }
+
+        .stat-change.negative {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--danger);
+        }
+
+        /* Charts Section */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            padding: 22px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .chart-card .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+        }
+
+        .chart-card .chart-header h3 {
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-card .chart-header .chart-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .chart-card .chart-header .chart-actions button {
+            background: var(--bg);
+            border: none;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .chart-card .chart-header .chart-actions button.active {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .chart-card canvas {
+            max-height: 260px;
+            width: 100% !important;
+        }
+
+        /* Tables */
+        .table-card {
+            background: var(--card-bg);
+            padding: 22px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
+            overflow-x: auto;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .table-card .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .table-card .table-header h3 {
+            color: var(--text-primary);
+            font-size: 17px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-dark);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--success-light);
+            box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--secondary);
+            color: var(--secondary);
+        }
+
+        .btn-outline:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th {
+            text-align: left;
+            padding: 12px 16px;
+            background: var(--bg);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 12px;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
         }
 
-        .play-btn:hover {
-            background-color: var(--primary-hover);
+        table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            color: var(--text-primary);
+            font-size: 14px;
         }
 
-        /* MODAL STYLES */
-        .modal {
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        table tr:hover td {
+            background: var(--bg);
+        }
+
+        .status-badge {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-badge.pago {
+            background: rgba(39, 174, 96, 0.15);
+            color: var(--success);
+        }
+
+        .status-badge.pendente {
+            background: rgba(243, 156, 18, 0.15);
+            color: var(--warning);
+        }
+
+        .status-badge.atrasado {
+            background: rgba(231, 76, 60, 0.15);
+            color: var(--danger);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .action-buttons button {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: var(--transition);
+            background: var(--bg);
+            color: var(--text-primary);
+        }
+
+        .action-buttons button:hover {
+            transform: scale(1.05);
+        }
+
+        .action-buttons .btn-whatsapp {
+            background: #25D366;
+            color: white;
+        }
+
+        .action-buttons .btn-whatsapp:hover {
+            background: #1ebe5b;
+        }
+
+        .action-buttons .btn-edit {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .action-buttons .btn-edit:hover {
+            background: var(--secondary-dark);
+        }
+
+        .action-buttons .btn-delete {
+            background: var(--danger);
+            color: white;
+        }
+
+        .action-buttons .btn-delete:hover {
+            background: #c0392b;
+        }
+
+        /* Modal */
+        .modal-overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.9);
-            z-index: 1000;
-            flex-direction: column;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
             justify-content: center;
             align-items: center;
+            backdrop-filter: blur(8px);
+            padding: 20px;
         }
 
-        .modal-header {
-            width: 90%;
-            max-width: 1000px;
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 520px;
+            padding: 30px 35px 35px;
+            position: relative;
+            animation: modalIn 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.05);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes modalIn {
+            from {
+                transform: scale(0.9) translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal .modal-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 1rem;
-            background-color: #1e293b;
-            border-radius: 8px 8px 0 0;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
 
-        .modal-title {
-            color: var(--primary);
-            font-size: 1.2rem;
-            font-weight: bold;
+        .modal .modal-header h2 {
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 700;
         }
 
-        .close-btn {
-            background: #ef4444;
+        .modal .close-modal {
+            background: var(--bg);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal .close-modal:hover {
+            background: var(--danger);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .modal .form-group {
+            margin-bottom: 18px;
+        }
+
+        .modal .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .modal .form-group input,
+        .modal .form-group select,
+        .modal .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--bg);
+            border-radius: 12px;
+            outline: none;
+            transition: var(--transition);
+            font-size: 14px;
+            font-family: inherit;
+            background: var(--bg);
+            color: var(--text-primary);
+        }
+
+        .modal .form-group input:focus,
+        .modal .form-group select:focus,
+        .modal .form-group textarea:focus {
+            border-color: var(--secondary);
+            background: transparent;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .modal .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .modal .form-actions button {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .modal .form-actions .btn-cancel {
+            background: var(--bg);
+            color: var(--text-secondary);
+        }
+
+        .modal .form-actions .btn-cancel:hover {
+            background: #ddd;
+        }
+
+        .modal .form-actions .btn-submit {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .modal .form-actions .btn-submit:hover {
+            background: var(--secondary-dark);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Toast Notification */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 3000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 360px;
+            width: 100%;
+        }
+
+        .toast {
+            background: var(--card-bg);
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            border-left: 4px solid var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast .toast-content {
+            flex: 1;
+        }
+
+        .toast .toast-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .toast .toast-content p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .toast .toast-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: var(--text-light);
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Section Management */
+        .page-section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Settings Section */
+        .settings-container {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .settings-container h3 {
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            font-size: 18px;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .settings-item {
+            padding: 18px;
+            background: var(--bg);
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .settings-item label {
+            font-weight: 500;
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .settings-item input,
+        .settings-item select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .settings-item input:focus,
+        .settings-item select:focus {
+            border-color: var(--secondary);
+            outline: none;
+        }
+
+        .backup-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .backup-actions button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 14px;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-backup {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-backup:hover {
+            background: var(--secondary-dark);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-restore {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-restore:hover {
+            background: #e67e22;
+        }
+
+        .btn-danger-outline {
+            background: transparent;
+            border: 2px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-danger-outline:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 15px;
+            }
+            .topbar .menu-toggle {
+                display: block;
+            }
+            .topbar .user-profile .user-name {
+                display: none;
+            }
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .topbar {
+                padding: 12px 16px;
+                top: 10px;
+            }
+            .topbar .search-box {
+                max-width: 200px;
+            }
+            .modal {
+                padding: 20px;
+                margin: 10px;
+            }
+            .table-card {
+                padding: 15px;
+            }
+            table th, table td {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .topbar .search-box {
+                max-width: 150px;
+                padding: 6px 12px;
+            }
+            .topbar .search-box input {
+                font-size: 12px;
+            }
+            .stat-card {
+                padding: 16px 18px;
+            }
+            .stat-card .stat-value {
+                font-size: 22px;
+            }
+            .modal .form-actions {
+                flex-direction: column;
+            }
+            .modal .form-actions button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Loading Skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg) 25%, rgba(255,255,255,0.1) 50%, var(--bg) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--secondary);
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            font-size: 24px;
+            box-shadow: 0 4px 20px rgba(52, 152, 219, 0.4);
             cursor: pointer;
-            font-weight: bold;
+            transition: var(--transition);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
         }
 
-        .close-btn:hover {
-            background: #dc2626;
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 30px rgba(52, 152, 219, 0.5);
         }
 
-        .iframe-container {
-            width: 90%;
-            max-width: 1000px;
-            height: 75vh;
-            background-color: #000;
-            border-radius: 0 0 8px 8px;
-            overflow: hidden;
+        .fab:active {
+            transform: scale(0.9);
         }
 
-        iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        @media (max-width: 768px) {
+            .fab {
+                display: flex;
+            }
         }
-        
-        footer {
+
+        /* Empty State */
+        .empty-state {
             text-align: center;
-            padding: 2rem;
-            color: var(--text-muted);
-            border-top: 1px solid #1e293b;
-            margin-top: 3rem;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            color: var(--text-light);
+            margin-bottom: 15px;
+        }
+
+        .empty-state h4 {
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .quick-action-btn i {
+            font-size: 18px;
+        }
+
+        .quick-action-btn .btn-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quick-action-btn .btn-icon.green {
+            background: rgba(39, 174, 96, 0.15);
+            color: var(--success);
+        }
+
+        .quick-action-btn .btn-icon.blue {
+            background: rgba(52, 152, 219, 0.15);
+            color: var(--secondary);
+        }
+
+        .quick-action-btn .btn-icon.yellow {
+            background: rgba(243, 156, 18, 0.15);
+            color: var(--warning);
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Samuk Games Retro</h1>
-        <p>Os maiores clássicos do Super Nintendo direto no seu navegador!</p>
-    </header>
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" style="display:none;"></div>
 
-    <div class="container">
-        <h2 class="section-title">Acervo de Clássicos</h2>
-        
-        <div class="games-grid" id="gamesContainer">
-            <!-- Os jogos serão injetados aqui via JavaScript -->
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo-icon">
+                <i class="fas fa-store"></i>
+            </div>
+            <div>
+                <h2>FiadoPro</h2>
+                <small>Sistema de Vendas</small>
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-label">Menu Principal</div>
+            <div class="menu-item active" data-page="dashboard">
+                <i class="fas fa-chart-pie"></i>
+                <span>Dashboard</span>
+                <span class="badge" id="dashboardBadge" style="display:none;">0</span>
+            </div>
+            <div class="menu-item" data-page="clientes">
+                <i class="fas fa-users"></i>
+                <span>Clientes</span>
+                <span class="badge" id="clientesBadge">0</span>
+            </div>
+            <div class="menu-item" data-page="vendas">
+                <i class="fas fa-shopping-cart"></i>
+                <span>Vendas</span>
+                <span class="badge" id="vendasBadge">0</span>
+            </div>
+            <div class="menu-item" data-page="relatorios">
+                <i class="fas fa-file-alt"></i>
+                <span>Relatórios</span>
+            </div>
+            
+            <div class="menu-label">Sistema</div>
+            <div class="menu-item" data-page="configuracoes">
+                <i class="fas fa-cog"></i>
+                <span>Configurações</span>
+            </div>
+            <div class="menu-item" data-page="backup">
+                <i class="fas fa-database"></i>
+                <span>Backup</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="search-box">
+                    <i class="fas fa-search" style="color:var(--text-light);"></i>
+                    <input type="text" placeholder="Pesquisar clientes, vendas..." id="searchInput">
+                </div>
+            </div>
+            <div class="topbar-right">
+                <button class="theme-toggle" id="themeToggle" title="Alternar tema">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="notification-btn" id="notificationBtn">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="notificationBadge">0</span>
+                </button>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=3498db&color=fff&bold=true" alt="Admin">
+                    <span class="user-name">Admin</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <button class="quick-action-btn" onclick="openModal('venda')">
+                <div class="btn-icon green"><i class="fas fa-plus"></i></div>
+                <span>Nova Venda</span>
+            </button>
+            <button class="quick-action-btn" onclick="openModal('cliente')">
+                <div class="btn-icon blue"><i class="fas fa-user-plus"></i></div>
+                <span>Novo Cliente</span>
+            </button>
+            <button class="quick-action-btn" onclick="document.querySelector('[data-page=relatorios]').click()">
+                <div class="btn-icon yellow"><i class="fas fa-chart-bar"></i></div>
+                <span>Relatórios</span>
+            </button>
+        </div>
+
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="page-section active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon blue"><i class="fas fa-dollar-sign"></i></div>
+                        <span style="font-size:13px;color:var(--text-secondary);font-weight:500;">Total Recebido</span>
+                    </div>
+                    <div class="stat-value" id="totalRecebido">R$ 0,00</div>
+                    <span class="stat-change positive"><i class="fas fa-arrow-up"></i> +12%</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon yellow"><i class="fas fa-hourglass-half"></i></div>
+                        <span style="font-size:13px;color:var(--text-secondary);font-weight:500;">A Receber</span>
+                    </div>
+                    <div class="stat-value" id="totalAReceber">R$ 0,00</div>
+                    <span class="stat-change negative"><i class="fas fa-arrow-down"></i> +8%</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon green"><i class="fas fa-users"></i></div>
+                        <span style="font-size:13px;color:var(--text-secondary);font-weight:500;">Clientes Ativos</span>
+                    </div>
+                    <div class="stat-value" id="totalClientes">0</div>
+                    <span class="stat-change positive"><i class="fas fa-arrow-up"></i> +5%</span>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div>
+                        <span style="font-size:13px;color:var(--text-secondary);font-weight:500;">Fiados Atrasados</span>
+                    </div>
+                    <div class="stat-value" id="fiadosAtrasados">0</div>
+                    <span class="stat-change negative"><i class="fas fa-arrow-down"></i> +3%</span>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-chart-line" style="color:var(--secondary);"></i> Vendas Mensais</h3>
+                        <div class="chart-actions">
+                            <button class="active" onclick="changeChartPeriod('month')">Mês</button>
+                            <button onclick="changeChartPeriod('year')">Ano</button>
+                        </div>
+                    </div>
+                    <canvas id="salesChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3><i class="fas fa-pie-chart" style="color:var(--success);"></i> Status de Pagamento</h3>
+                    </div>
+                    <canvas id="paymentChart"></canvas>
+                </div>
+            </div>
+
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-clock" style="color:var(--warning);"></i> Últimas Vendas a Fiado</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openModal('venda')"><i class="fas fa-plus"></i> Nova Venda</button>
+                </div>
+                <div id="recentSalesContainer">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Produto</th>
+                                <th>Valor</th>
+                                <th>Vencimento</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="salesTableBody">
+                            <!-- Dynamic -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Clients Section -->
+        <section id="clientes" class="page-section">
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-users" style="color:var(--secondary);"></i> Todos os Clientes</h3>
+                    <button class="btn btn-primary btn-sm" onclick="openModal('cliente')"><i class="fas fa-plus"></i> Novo Cliente</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Telefone</th>
+                            <th>Email</th>
+                            <th>Total Fiado</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clientsTableBody">
+                        <!-- Dynamic -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Sales Section -->
+        <section id="vendas" class="page-section">
+            <div class="table-card">
+                <div class="table-header">
+                    <h3><i class="fas fa-shopping-cart" style="color:var(--success);"></i> Todas as Vendas</h3>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <select id="filterStatus" style="padding:8px 14px;border-radius:10px;border:1px solid var(--bg);background:var(--bg);color:var(--text-primary);font-size:13px;">
+                            <option value="all">Todos Status</option>
+                            <option value="pago">Pago</option>
+                            <option value="pendente">Pendente</option>
+                            <option value="atrasado">Atrasado</option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" onclick="openModal('venda')"><i class="fas fa-plus"></i> Nova Venda</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Produto</th>
+                            <th>Valor</th>
+                            <th>Data</th>
+                            <th>Vencimento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allSalesTableBody">
+                        <!-- Dynamic -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Reports Section -->
+        <section id="relatorios" class="page-section">
+            <div class="settings-container">
+                <h3><i class="fas fa-file-alt" style="color:var(--secondary);"></i> Relatórios e Estatísticas</h3>
+                <div class="stats-grid" style="margin-bottom:20px;">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon blue"><i class="fas fa-calendar-day"></i></div>
+                            <span style="font-size:13px;color:var(--text-secondary);">Vendas Hoje</span>
+                        </div>
+                        <div class="stat-value" id="vendasHoje">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon green"><i class="fas fa-calendar-week"></i></div>
+                            <span style="font-size:13px;color:var(--text-secondary);">Vendas Semana</span>
+                        </div>
+                        <div class="stat-value" id="vendasSemana">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon yellow"><i class="fas fa-calendar-alt"></i></div>
+                            <span style="font-size:13px;color:var(--text-secondary);">Vendas Mês</span>
+                        </div>
+                        <div class="stat-value" id="vendasMes">R$ 0,00</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    <button class="btn btn-success" onclick="exportReport('pdf')"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+                    <button class="btn btn-primary" onclick="exportReport('excel')"><i class="fas fa-file-excel"></i> Exportar Excel</button>
+                    <button class="btn btn-warning" onclick="exportReport('csv')"><i class="fas fa-file-csv"></i> Exportar CSV</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="configuracoes" class="page-section">
+            <div class="settings-container">
+                <h3><i class="fas fa-cog" style="color:var(--secondary);"></i> Configurações Gerais</h3>
+                <div class="settings-grid">
+                    <div class="settings-item">
+                        <label>Nome da Loja</label>
+                        <input type="text" value="Minha Loja" id="storeName">
+                    </div>
+                    <div class="settings-item">
+                        <label>Telefone da Loja</label>
+                        <input type="text" value="(11) 99999-9999" id="storePhone">
+                    </div>
+                    <div class="settings-item">
+                        <label>Email da Loja</label>
+                        <input type="email" value="contato@minhaloja.com" id="storeEmail">
+                    </div>
+                    <div class="settings-item">
+                        <label>Moeda</label>
+                        <select id="currency">
+                            <option value="BRL">R$ - Real</option>
+                            <option value="USD">$ - Dólar</option>
+                            <option value="EUR">€ - Euro</option>
+                        </select>
+                    </div>
+                    <div class="settings-item">
+                        <label>Prazo Padrão para Fiado (dias)</label>
+                        <input type="number" value="30" id="defaultDays">
+                    </div>
+                    <div class="settings-item">
+                        <label>Tema</label>
+                        <select id="themeSelect">
+                            <option value="light">Claro</option>
+                            <option value="dark">Escuro</option>
+                            <option value="system">Sistema</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="saveSettings()" style="margin-top:20px;"><i class="fas fa-save"></i> Salvar Configurações</button>
+            </div>
+        </section>
+
+        <!-- Backup Section -->
+        <section id="backup" class="page-section">
+            <div class="settings-container">
+                <h3><i class="fas fa-database" style="color:var(--warning);"></i> Backup e Restauração</h3>
+                <p style="color:var(--text-secondary);margin-bottom:20px;">Faça backup dos seus dados ou restaure uma versão anterior.</p>
+                <div class="backup-actions">
+                    <button class="btn-backup" onclick="exportBackup()"><i class="fas fa-download"></i> Exportar Backup</button>
+                    <button class="btn-restore" onclick="importBackup()"><i class="fas fa-upload"></i> Restaurar Backup</button>
+                    <button class="btn-danger-outline" onclick="clearAllData()"><i class="fas fa-trash"></i> Limpar Todos os Dados</button>
+                </div>
+                <div style="margin-top:20px;padding:18px;background:var(--bg);border-radius:12px;">
+                    <p><strong>Último backup:</strong> <span id="lastBackup">Nenhum backup realizado</span></p>
+                    <p><strong>Tamanho dos dados:</strong> <span id="dataSize">0 KB</span></p>
+                    <p><strong>Total de clientes:</strong> <span id="totalClientsBackup">0</span></p>
+                    <p><strong>Total de vendas:</strong> <span id="totalSalesBackup">0</span></p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nova Venda</h2>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="modalForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label>Cliente</label>
+                    <select id="clienteSelect" required>
+                        <option value="">Selecione um cliente</option>
+                    </select>
+                    <small style="color:var(--text-light);display:block;margin-top:4px;">
+                        <i class="fas fa-plus-circle" style="cursor:pointer;color:var(--secondary);" onclick="toggleNewClient()"></i> 
+                        <span style="cursor:pointer;color:var(--secondary);" onclick="toggleNewClient()">Adicionar novo cliente</span>
+                    </small>
+                </div>
+                <div class="form-group" id="newClientFields" style="display:none;">
+                    <label>Nome do Novo Cliente</label>
+                    <input type="text" id="newClientName" placeholder="Digite o nome">
+                    <label style="margin-top:8px;">Telefone</label>
+                    <input type="text" id="newClientPhone" placeholder="(11) 99999-9999">
+                    <label style="margin-top:8px;">Email (opcional)</label>
+                    <input type="email" id="newClientEmail" placeholder="email@exemplo.com">
+                </div>
+                <div class="form-group">
+                    <label>Produto</label>
+                    <input type="text" id="produtoInput" placeholder="Digite o produto" required>
+                </div>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" step="0.01" id="valorInput" placeholder="0,00" required>
+                </div>
+                <div class="form-group">
+                    <label>Data de Vencimento</label>
+                    <input type="date" id="vencimentoInput" required>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="statusInput">
+                        <option value="pendente">Pendente</option>
+                        <option value="pago">Pago</option>
+                        <option value="atrasado">Atrasado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observações</label>
+                    <textarea id="observacoesInput" rows="2" placeholder="Observações adicionais..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn-submit"><i class="fas fa-save"></i> Salvar</button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2024 Samuk Games Retro. Todos os direitos reservados.</p>
-    </footer>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
-    <!-- MODAL DO JOGO -->
-    <div class="modal" id="gameModal">
-        <div class="modal-header">
-            <div class="modal-title" id="modalGameTitle">Nome do Jogo</div>
-            <button class="close-btn" onclick="closeGame()">X Fechar</button>
-        </div>
-        <div class="iframe-container">
-            <iframe id="gameIframe" src="" allowfullscreen></iframe>
-        </div>
-    </div>
+    <!-- Floating Action Button -->
+    <button class="fab" id="fabButton" onclick="openModal('venda')">
+        <i class="fas fa-plus"></i>
+    </button>
 
     <script>
-        // Dados extraídos da página original
-        const games = [
-            {
-                title: "Super Mario World",
-                genre: "Plataforma • 1990",
-                image: "https://classicgamezone.com/games/covers/snes/super-mario-world.webp",
-                url: "https://classicgamezone.com/pt/games/super-mario-world"
+        // ==================== DATA STORE ====================
+        let data = {
+            clients: [
+                { id: 1, name: 'João Silva', phone: '(11) 99999-8888', email: 'joao@email.com', totalFiado: 350.00, createdAt: '2026-08-01' },
+                { id: 2, name: 'Maria Oliveira', phone: '(11) 98888-7777', email: 'maria@email.com', totalFiado: 120.50, createdAt: '2026-07-20' },
+                { id: 3, name: 'Carlos Santos', phone: '(11) 97777-6666', email: 'carlos@email.com', totalFiado: 0, createdAt: '2026-07-15' },
+            ],
+            sales: [
+                { id: 1, clientId: 1, product: 'Smartphone', value: 350.00, date: '2026-08-01', dueDate: '2026-08-31', status: 'pendente', observations: '' },
+                { id: 2, clientId: 2, product: 'Fone de Ouvido', value: 120.50, date: '2026-07-20', dueDate: '2026-08-20', status: 'pago', observations: '' },
+                { id: 3, clientId: 1, product: 'Carregador', value: 45.00, date: '2026-07-15', dueDate: '2026-08-15', status: 'atrasado', observations: '' },
+            ],
+            settings: {
+                storeName: 'Minha Loja',
+                storePhone: '(11) 99999-9999',
+                storeEmail: 'contato@minhaloja.com',
+                currency: 'BRL',
+                defaultDays: 30,
+                theme: 'light'
             },
-            {
-                title: "Donkey Kong Country",
-                genre: "Plataforma • 1994",
-                image: "https://classicgamezone.com/games/covers/snes/donkey-kong-country.webp",
-                url: "https://classicgamezone.com/pt/games/donkey-kong-country"
-            },
-            {
-                title: "Mega Man X",
-                genre: "Ação/Plataforma • 1993",
-                image: "https://classicgamezone.com/games/covers/snes/mega-man-x.webp",
-                url: "https://classicgamezone.com/pt/games/mega-man-x"
-            },
-            {
-                title: "Super Mario Kart",
-                genre: "Corrida • 1992",
-                image: "https://classicgamezone.com/games/covers/snes/super-mario-kart.webp",
-                url: "https://classicgamezone.com/pt/games/super-mario-kart"
-            },
-            {
-                title: "Chrono Trigger",
-                genre: "RPG • 1995",
-                image: "https://classicgamezone.com/games/covers/snes/chrono-trigger.jpg",
-                url: "https://classicgamezone.com/pt/games/chrono-trigger"
-            },
-            {
-                title: "The Legend of Zelda: A Link to the Past",
-                genre: "Ação-Aventura • 1991",
-                image: "https://classicgamezone.com/games/covers/snes/zelda-link-to-the-past.webp",
-                url: "https://classicgamezone.com/pt/games/zelda-link-to-the-past"
-            },
-            {
-                title: "Super Metroid",
-                genre: "Ação-Aventura • 1994",
-                image: "https://classicgamezone.com/games/covers/snes/super-metroid.jpg",
-                url: "https://classicgamezone.com/pt/games/super-metroid"
-            },
-            {
-                title: "Street Fighter II Turbo",
-                genre: "Luta • 1993",
-                image: "https://classicgamezone.com/games/covers/snes/street-fighter-ii-turbo-hyper-fighting.webp",
-                url: "https://classicgamezone.com/pt/games/street-fighter-ii-turbo-hyper-fighting"
-            },
-            {
-                title: "Mortal Kombat 3 Ultimate",
-                genre: "Luta • 1996",
-                image: "https://classicgamezone.com/games/covers/snes/ultimate-mortal-kombat-3.jpg",
-                url: "https://classicgamezone.com/pt/games/ultimate-mortal-kombat-3"
-            },
-            {
-                title: "Super Mario RPG",
-                genre: "RPG • 1996",
-                image: "https://classicgamezone.com/games/covers/snes/super-mario-rpg-legend-of-the-seven-stars.webp",
-                url: "https://classicgamezone.com/pt/games/super-mario-rpg-legend-of-the-seven-stars"
-            },
-            {
-                title: "Aladdin",
-                genre: "Plataforma • 1993",
-                image: "https://classicgamezone.com/games/covers/snes/aladdin.jpg",
-                url: "https://classicgamezone.com/pt/games/aladdin"
-            },
-            {
-                title: "Top Gear",
-                genre: "Corrida • 1992",
-                image: "https://classicgamezone.com/games/covers/snes/top-gear.jpg",
-                url: "https://classicgamezone.com/pt/games/top-gear"
-            }
-        ];
+            backups: []
+        };
 
-        // Função para renderizar os jogos na tela
-        function renderGames() {
-            const container = document.getElementById('gamesContainer');
-            
-            games.forEach(game => {
-                const card = document.createElement('div');
-                card.className = 'game-card';
-                
-                card.innerHTML = `
-                    <img src="${game.image}" alt="${game.title}" class="game-image" loading="lazy">
-                    <div class="game-info">
-                        <div class="game-title">${game.title}</div>
-                        <div class="game-genre">${game.genre}</div>
-                        <button class="play-btn" onclick="openGame('${game.url}', '${game.title}')">▶ Jogar Agora</button>
-                    </div>
-                `;
-                
-                container.appendChild(card);
+        let nextId = 4;
+        let salesChartInstance = null;
+        let paymentChartInstance = null;
+        let isDarkMode = false;
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            renderClients();
+            renderSales();
+            renderAllSales();
+            updateStats();
+            updateCharts();
+            setupSidebar();
+            setupSearch();
+            setupModalForm();
+            updateBackupInfo();
+            updateBadges();
+            setupTheme();
+            setupNotifications();
+            setupFilter();
+
+            // Set default due date
+            const today = new Date();
+            const defaultDays = parseInt(data.settings.defaultDays) || 30;
+            const dueDate = new Date(today);
+            dueDate.setDate(today.getDate() + defaultDays);
+            document.getElementById('vencimentoInput').value = dueDate.toISOString().split('T')[0];
+
+            // Show welcome toast
+            setTimeout(() => {
+                showToast('Bem-vindo ao FiadoPro!', 'Sistema de vendas a fiado carregado com sucesso.', 'success');
+            }, 500);
+        });
+
+        // ==================== SIDEBAR ====================
+        function setupSidebar() {
+            const menuItems = document.querySelectorAll('.menu-item');
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    menuItems.forEach(m => m.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const page = this.dataset.page;
+                    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+                    document.getElementById(page).classList.add('active');
+
+                    // Close sidebar on mobile
+                    if (window.innerWidth <= 992) {
+                        sidebar.classList.remove('open');
+                        overlay.style.display = 'none';
+                    }
+                });
+            });
+
+            menuToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('open');
+                overlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+            });
+
+            overlay.addEventListener('click', function() {
+                sidebar.classList.remove('open');
+                this.style.display = 'none';
+            });
+
+            // Close on resize
+            window.addEventListener('resize', function() {
+                if (window.innerWidth > 992) {
+                    sidebar.classList.remove('open');
+                    overlay.style.display = 'none';
+                }
             });
         }
 
-        // Funções do Modal
-        function openGame(url, title) {
-            const modal = document.getElementById('gameModal');
-            const iframe = document.getElementById('gameIframe');
-            const modalTitle = document.getElementById('modalGameTitle');
-
-            modalTitle.innerText = `Jogando: ${title}`;
-            iframe.src = url; // Carrega o site do emulador dentro do seu site
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // Evita rolagem da página ao fundo
+        // ==================== SEARCH ====================
+        function setupSearch() {
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const term = e.target.value.toLowerCase();
+                const tables = ['#salesTableBody', '#clientsTableBody', '#allSalesTableBody'];
+                
+                tables.forEach(selector => {
+                    const rows = document.querySelectorAll(`${selector} tr`);
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(term) ? '' : 'none';
+                    });
+                });
+            });
         }
 
-        function closeGame() {
-            const modal = document.getElementById('gameModal');
-            const iframe = document.getElementById('gameIframe');
-
-            iframe.src = ""; // Para o jogo / aúdios
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto'; // Restaura rolagem
+        // ==================== FILTER ====================
+        function setupFilter() {
+            document.getElementById('filterStatus').addEventListener('change', function() {
+                const status = this.value;
+                const rows = document.querySelectorAll('#allSalesTableBody tr');
+                
+                rows.forEach(row => {
+                    const statusCell = row.querySelector('.status-badge');
+                    if (statusCell) {
+                        const rowStatus = statusCell.textContent.toLowerCase();
+                        if (status === 'all' || rowStatus === status) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    }
+                });
+            });
         }
 
-        // Inicia a renderização quando a página carrega
-        window.onload = renderGames;
+        // ==================== THEME ====================
+        function setupTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            const themeSelect = document.getElementById('themeSelect');
+            
+            // Load saved theme
+            const savedTheme = data.settings.theme || 'light';
+            applyTheme(savedTheme);
+            themeSelect.value = savedTheme;
+
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                applyTheme(newTheme);
+                data.settings.theme = newTheme;
+                saveData();
+                
+                // Update icon
+                const icon = this.querySelector('i');
+                icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            });
+
+            themeSelect.addEventListener('change', function() {
+                applyTheme(this.value);
+                data.settings.theme = this.value;
+                saveData();
+            });
+        }
+
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            const icon = document.querySelector('#themeToggle i');
+            
+            if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                html.setAttribute('data-theme', 'dark');
+                isDarkMode = true;
+                if (icon) icon.className = 'fas fa-sun';
+            } else {
+                html.removeAttribute('data-theme');
+                isDarkMode = false;
+                if (icon) icon.className = 'fas fa-moon';
+            }
+        }
+
+        // ==================== NOTIFICATIONS ====================
+        function setupNotifications() {
+            const btn = document.getElementById('notificationBtn');
+            btn.addEventListener('click', function() {
+                const badge = document.getElementById('notificationBadge');
+                badge.textContent = '0';
+                badge.style.display = 'none';
+                showToast('Notificações', 'Todas as notificações foram lidas.', 'info');
+            });
+        }
+
+        // ==================== TOAST ====================
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icons = {
+                success: 'fas fa-check-circle',
+                error: 'fas fa-exclamation-circle',
+                warning: 'fas fa-exclamation-triangle',
+                info: 'fas fa-info-circle'
+            };
+            
+            toast.innerHTML = `
+                <i class="toast-icon ${icons[type] || icons.info}" style="color:var(--${type === 'info' ? 'secondary' : type});"></i>
+                <div class="toast-content">
+                    <h4>${title}</h4>
+                    <p>${message}</p>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+            `;
+            
+            container.appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentElement) toast.remove();
+            }, 5000);
+        }
+
+        // ==================== MODAL ====================
+        function openModal(type, dataItem = null) {
+            const overlay = document.getElementById('modalOverlay');
+            const title = document.getElementById('modalTitle');
+            const form = document.getElementById('modalForm');
+            
+            // Reset form
+            form.reset();
+            document.getElementById('editId').value = '';
+            document.getElementById('newClientFields').style.display = 'none';
+            
+            if (type === 'cliente') {
+                title.textContent = dataItem ? 'Editar Cliente' : 'Novo Cliente';
+                document.getElementById('clienteSelect').style.display = 'none';
+                document.getElementById('newClientFields').style.display = 'block';
+                document.querySelectorAll('#modalForm .form-group:not(#newClientFields)').forEach(el => {
+                    if (el.id !== 'newClientFields') el.style.display = 'none';
+                });
+                
+                if (dataItem) {
+                    document.getElementById('newClientName').value = dataItem.name;
+                    document.getElementById('newClientPhone').value = dataItem.phone;
+                    document.getElementById('newClientEmail').value = dataItem.email || '';
+                    document.getElementById('editId').value = dataItem.id;
+                }
+            } else if (type === 'venda') {
+                title.textContent = dataItem ? 'Editar Venda' : 'Nova Venda';
+                document.getElementById('clienteSelect').style.display = 'block';
+                document.getElementById('newClientFields').style.display = 'none';
+                document.querySelectorAll('#modalForm .form-group:not(#newClientFields)').forEach(el => {
+                    el.style.display = 'block';
+                });
+                
+                populateClientSelect();
+                
+                if (dataItem) {
+                    document.getElementById('clienteSelect').value = dataItem.clientId;
+                    document.getElementById('produtoInput').value = dataItem.product;
+                    document.getElementById('valorInput').value = dataItem.value;
+                    document.getElementById('vencimentoInput').value = dataItem.dueDate;
+                    document.getElementById('statusInput').value = dataItem.status;
+                    document.getElementById('observacoesInput').value = dataItem.observations || '';
+                    document.getElementById('editId').value = dataItem.id;
+                } else {
+                    // Set default due date
+                    const today = new Date();
+                    const defaultDays = parseInt(data.settings.defaultDays) || 30;
+                    const dueDate = new Date(today);
+                    dueDate.setDate(today.getDate() + defaultDays);
+                    document.getElementById('vencimentoInput').value = dueDate.toISOString().split('T')[0];
+                }
+            }
+            
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function toggleNewClient() {
+            const fields = document.getElementById('newClientFields');
+            const select = document.getElementById('clienteSelect');
+            
+            if (fields.style.display === 'none') {
+                fields.style.display = 'block';
+                select.style.display = 'none';
+                document.getElementById('clienteSelect').required = false;
+            } else {
+                fields.style.display = 'none';
+                select.style.display = 'block';
+                document.getElementById('clienteSelect').required = true;
+            }
+        }
+
+        function populateClientSelect() {
+            const select = document.getElementById('clienteSelect');
+            select.innerHTML = '<option value="">Selecione um cliente</option>';
+            data.clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.id;
+                option.textContent = `${client.name} - ${client.phone}`;
+                select.appendChild(option);
+            });
+        }
+
+        // ==================== MODAL FORM ====================
+        function setupModalForm() {
+            document.getElementById('modalForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const editId = document.getElementById('editId').value;
+                const isClient = document.getElementById('clienteSelect').style.display === 'none';
+                
+                if (isClient) {
+                    // Save client
+                    const name = document.getElementById('newClientName').value.trim();
+                    const phone = document.getElementById('newClientPhone').value.trim();
+                    const email = document.getElementById('newClientEmail').value.trim();
+                    
+                    if (!name || !phone) {
+                        showToast('Erro', 'Por favor, preencha nome e telefone.', 'error');
+                        return;
+                    }
+                    
+                    if (editId) {
+                        // Edit existing client
+                        const client = data.clients.find(c => c.id === parseInt(editId));
+                        if (client) {
+                            client.name = name;
+                            client.phone = phone;
+                            client.email = email;
+                            showToast('Sucesso', 'Cliente atualizado com sucesso!', 'success');
+                        }
+                    } else {
+                        // New client
+                        const newClient = {
+                            id: nextId++,
+                            name: name,
+                            phone: phone,
+                            email: email,
+                            totalFiado: 0,
+                            createdAt: new Date().toISOString().split('T')[0]
+                        };
+                        data.clients.push(newClient);
+                        showToast('Sucesso', 'Cliente cadastrado com sucesso!', 'success');
+                    }
+                } else {
+                    // Save sale
+                    const clientId = parseInt(document.getElementById('clienteSelect').value);
+                    const product = document.getElementById('produtoInput').value.trim();
+                    const value = parseFloat(document.getElementById('valorInput').value);
+                    const dueDate = document.getElementById('vencimentoInput').value;
+                    const status = document.getElementById('statusInput').value;
+                    const observations = document.getElementById('observacoesInput').value.trim();
+                    
+                    if (!clientId || !product || !value || !dueDate) {
+                        showToast('Erro', 'Por favor, preencha todos os campos obrigatórios.', 'error');
+                        return;
+                    }
+                    
+                    if (editId) {
+                        // Edit existing sale
+                        const sale = data.sales.find(s => s.id === parseInt(editId));
+                        if (sale) {
+                            // Update client's total fiado
+                            const oldClient = data.clients.find(c => c.id === sale.clientId);
+                            const newClient = data.clients.find(c => c.id === clientId);
+                            
+                            if (oldClient && sale.status !== 'pago') {
+                                oldClient.totalFiado -= sale.value;
+                            }
+                            if (newClient && status !== 'pago') {
+                                newClient.totalFiado += value;
+                            }
+                            
+                            sale.clientId = clientId;
+                            sale.product = product;
+                            sale.value = value;
+                            sale.dueDate = dueDate;
+                            sale.status = status;
+                            sale.observations = observations;
+                            showToast('Sucesso', 'Venda atualizada com sucesso!', 'success');
+                        }
+                    } else {
+                        // New sale
+                        const newSale = {
+                            id: nextId++,
+                            clientId: clientId,
+                            product: product,
+                            value: value,
+                            date: new Date().toISOString().split('T')[0],
+                            dueDate: dueDate,
+                            status: status,
+                            observations: observations
+                        };
+                        data.sales.push(newSale);
+                        
+                        // Update client's total fiado
+                        const client = data.clients.find(c => c.id === clientId);
+                        if (client && status !== 'pago') {
+                            client.totalFiado += value;
+                        }
+                        showToast('Sucesso', 'Venda cadastrada com sucesso!', 'success');
+                    }
+                }
+                
+                saveData();
+                renderAll();
+                closeModal();
+            });
+        }
+
+        // ==================== RENDER FUNCTIONS ====================
+        function renderClients() {
+            const tbody = document.getElementById('clientsTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.clients.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <h4>Nenhum cliente cadastrado</h4>
+                                <p>Clique em "Novo Cliente" para começar.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            data.clients.forEach(client => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${client.name}</strong></td>
+                    <td>${client.phone}</td>
+                    <td>${client.email || '-'}</td>
+                    <td><strong>R$ ${client.totalFiado.toFixed(2)}</strong></td>
+                    <td><span class="status-badge ${client.totalFiado > 0 ? 'pendente' : 'pago'}">${client.totalFiado > 0 ? 'Devedor' : 'Quite'}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="editClient(${client.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                            <button class="btn-whatsapp" onclick="sendWhatsApp('${client.phone}')" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>
+                            <button class="btn-delete" onclick="deleteClient(${client.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderSales() {
+            const tbody = document.getElementById('salesTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.sales.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="fas fa-shopping-cart"></i>
+                                <h4>Nenhuma venda recente</h4>
+                                <p>Comece cadastrando sua primeira venda.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Show only last 5 sales
+            const recentSales = data.sales.slice(-5).reverse();
+            recentSales.forEach(sale => {
+                const client = data.clients.find(c => c.id === sale.clientId);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${client ? client.name : 'Cliente removido'}</strong></td>
+                    <td>${sale.product}</td>
+                    <td><strong>R$ ${sale.value.toFixed(2)}</strong></td>
+                    <td>${formatDate(sale.dueDate)}</td>
+                    <td><span class="status-badge ${sale.status}">${sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="editSale(${sale.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                            <button class="btn-whatsapp" onclick="sendWhatsApp('${client ? client.phone : ''}')" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>
+                            <button class="btn-delete" onclick="deleteSale(${sale.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderAllSales() {
+            const tbody = document.getElementById('allSalesTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.sales.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <i class="fas fa-shopping-cart"></i>
+                                <h4>Nenhuma venda cadastrada</h4>
+                                <p>Clique em "Nova Venda" para começar.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            data.sales.forEach(sale => {
+                const client = data.clients.find(c => c.id === sale.clientId);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${client ? client.name : 'Cliente removido'}</strong></td>
+                    <td>${sale.product}</td>
+                    <td><strong>R$ ${sale.value.toFixed(2)}</strong></td>
+                    <td>${formatDate(sale.date)}</td>
+                    <td>${formatDate(sale.dueDate)}</td>
+                    <td><span class="status-badge ${sale.status}">${sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}</span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-edit" onclick="editSale(${sale.id})" title="Editar"><i class="fas fa-edit"></i></button>
+                            <button class="btn-whatsapp" onclick="sendWhatsApp('${client ? client.phone : ''}')" title="WhatsApp"><i class="fab fa-whatsapp"></i></button>
+                            <button class="btn-delete" onclick="deleteSale(${sale.id})" title="Excluir"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats() {
+            const totalReceived = data.sales.filter(s => s.status === 'pago').reduce((sum, s) => sum + s.value, 0);
+            const totalToReceive = data.sales.filter(s => s.status !== 'pago').reduce((sum, s) => sum + s.value, 0);
+            const activeClients = data.clients.length;
+            const overdueSales = data.sales.filter(s => s.status === 'atrasado').length;
+            
+            document.getElementById('totalRecebido').textContent = `R$ ${totalReceived.toFixed(2)}`;
+            document.getElementById('totalAReceber').textContent = `R$ ${totalToReceive.toFixed(2)}`;
+            document.getElementById('totalClientes').textContent = activeClients;
+            document.getElementById('fiadosAtrasados').textContent = overdueSales;
+
+            // Update reports
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const weekStart = new Date(today);
+            weekStart.setDate(today.getDate() - today.getDay());
+            const weekStartStr = weekStart.toISOString().split('T')[0];
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthStartStr = monthStart.toISOString().split('T')[0];
+
+            const todaySales = data.sales.filter(s => s.date === todayStr).reduce((sum, s) => sum + s.value, 0);
+            const weekSales = data.sales.filter(s => s.date >= weekStartStr && s.date <= todayStr).reduce((sum, s) => sum + s.value, 0);
+            const monthSales = data.sales.filter(s => s.date >= monthStartStr && s.date <= todayStr).reduce((sum, s) => sum + s.value, 0);
+
+            document.getElementById('vendasHoje').textContent = `R$ ${todaySales.toFixed(2)}`;
+            document.getElementById('vendasSemana').textContent = `R$ ${weekSales.toFixed(2)}`;
+            document.getElementById('vendasMes').textContent = `R$ ${monthSales.toFixed(2)}`;
+        }
+
+        function updateCharts() {
+            // Sales chart
+            const salesCtx = document.getElementById('salesChart').getContext('2d');
+            if (salesChartInstance) salesChartInstance.destroy();
+            
+            const monthlySales = getMonthlySales();
+            salesChartInstance = new Chart(salesCtx, {
+                type: 'line',
+                data: {
+                    labels: monthlySales.labels,
+                    datasets: [{
+                        label: 'Vendas (R$)',
+                        data: monthlySales.values,
+                        borderColor: '#3498db',
+                        backgroundColor: isDarkMode ? 'rgba(52, 152, 219, 0.15)' : 'rgba(52, 152, 219, 0.08)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: '#3498db',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `R$ ${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+                            },
+                            ticks: {
+                                callback: value => `R$ ${value}`
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Payment chart
+            const paymentCtx = document.getElementById('paymentChart').getContext('2d');
+            if (paymentChartInstance) paymentChartInstance.destroy();
+            
+            const statusCount = {
+                pago: data.sales.filter(s => s.status === 'pago').length,
+                pendente: data.sales.filter(s => s.status === 'pendente').length,
+                atrasado: data.sales.filter(s => s.status === 'atrasado').length
+            };
+            
+            paymentChartInstance = new Chart(paymentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pago', 'Pendente', 'Atrasado'],
+                    datasets: [{
+                        data: [statusCount.pago, statusCount.pendente, statusCount.atrasado],
+                        backgroundColor: ['#27ae60', '#f39c12', '#e74c3c'],
+                        borderWidth: 0,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                                    return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function getMonthlySales() {
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            const currentYear = new Date().getFullYear();
+            const monthlyTotals = new Array(12).fill(0);
+            
+            data.sales.forEach(sale => {
+                const saleDate = new Date(sale.date + 'T00:00:00');
+                if (saleDate.getFullYear() === currentYear) {
+                    const month = saleDate.getMonth();
+                    monthlyTotals[month] += sale.value;
+                }
+            });
+            
+            // Get only months with data or up to current month
+            const labels = [];
+            const values = [];
+            const currentMonth = new Date().getMonth();
+            for (let i = 0; i <= currentMonth; i++) {
+                labels.push(months[i]);
+                values.push(monthlyTotals[i]);
+            }
+            
+            return { labels, values };
+        }
+
+        function changeChartPeriod(period) {
+            // Simple toggle for demonstration
+            const buttons = document.querySelectorAll('.chart-actions button');
+            buttons.forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            updateCharts();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr + 'T00:00:00');
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        // ==================== ACTIONS ====================
+        function editClient(id) {
+            const client = data.clients.find(c => c.id === id);
+            if (client) openModal('cliente', client);
+        }
+
+        function editSale(id) {
+            const sale = data.sales.find(s => s.id === id);
+            if (sale) openModal('venda', sale);
+        }
+
+        function deleteClient(id) {
+            if (confirm('Tem certeza que deseja excluir este cliente? Todas as vendas associadas também serão removidas.')) {
+                data.clients = data.clients.filter(c => c.id !== id);
+                data.sales = data.sales.filter(s => s.clientId !== id);
+                saveData();
+                renderAll();
+                showToast('Cliente removido', 'Cliente e vendas associadas foram excluídos.', 'warning');
+            }
+        }
+
+        function deleteSale(id) {
+            if (confirm('Tem certeza que deseja excluir esta venda?')) {
+                const sale = data.sales.find(s => s.id === id);
+                if (sale) {
+                    // Update client's total fiado
+                    const client = data.clients.find(c => c.id === sale.clientId);
+                    if (client && sale.status !== 'pago') {
+                        client.totalFiado = Math.max(0, client.totalFiado - sale.value);
+                    }
+                }
+                data.sales = data.sales.filter(s => s.id !== id);
+                saveData();
+                renderAll();
+                showToast('Venda removida', 'Venda excluída com sucesso.', 'warning');
+            }
+        }
+
+        function sendWhatsApp(phone) {
+            if (!phone) {
+                showToast('Erro', 'Cliente não possui telefone cadastrado.', 'error');
+                return;
+            }
+            const cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.length < 10) {
+                showToast('Erro', 'Número de telefone inválido.', 'error');
+                return;
+            }
+            const url = `https://wa.me/55${cleanPhone}`;
+            window.open(url, '_blank');
+        }
+
+        function renderAll() {
+            renderClients();
+            renderSales();
+            renderAllSales();
+            updateStats();
+            updateCharts();
+            updateBackupInfo();
+            updateBadges();
+        }
+
+        // ==================== BADGES ====================
+        function updateBadges() {
+            document.getElementById('clientesBadge').textContent = data.clients.length;
+            document.getElementById('vendasBadge').textContent = data.sales.length;
+            
+            const overdue = data.sales.filter(s => s.status === 'atrasado').length;
+            const badge = document.getElementById('dashboardBadge');
+            if (overdue > 0) {
+                badge.textContent = overdue;
+                badge.style.display = 'inline';
+            } else {
+                badge.style.display = 'none';
+            }
+            
+            // Notification badge
+            const notifBadge = document.getElementById('notificationBadge');
+            if (overdue > 0) {
+                notifBadge.textContent = overdue;
+                notifBadge.style.display = 'inline';
+            } else {
+                notifBadge.textContent = '0';
+                notifBadge.style.display = 'none';
+            }
+        }
+
+        // ==================== SETTINGS ====================
+        function saveSettings() {
+            data.settings.storeName = document.getElementById('storeName').value;
+            data.settings.storePhone = document.getElementById('storePhone').value;
+            data.settings.storeEmail = document.getElementById('storeEmail').value;
+            data.settings.currency = document.getElementById('currency').value;
+            data.settings.defaultDays = parseInt(document.getElementById('defaultDays').value);
+            
+            saveData();
+            showToast('Configurações salvas', 'Todas as configurações foram atualizadas com sucesso!', 'success');
+        }
+
+        // ==================== BACKUP ====================
+        function exportBackup() {
+            const backup = {
+                data: data,
+                timestamp: new Date().toISOString(),
+                version: '2.0',
+                appName: 'FiadoPro'
+            };
+            
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup_fiado_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            document.getElementById('lastBackup').textContent = new Date().toLocaleString();
+            saveData();
+            showToast('Backup exportado', 'Arquivo de backup baixado com sucesso!', 'success');
+        }
+
+        function importBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const backup = JSON.parse(e.target.result);
+                        if (backup.data && backup.data.clients && backup.data.sales) {
+                            if (confirm('Restaurar backup substituirá todos os dados atuais. Continuar?')) {
+                                data = backup.data;
+                                nextId = data.sales.length + data.clients.length + 1;
+                                saveData();
+                                renderAll();
+                                showToast('Backup restaurado', 'Dados recuperados com sucesso!', 'success');
+                            }
+                        } else {
+                            showToast('Erro', 'Arquivo de backup inválido.', 'error');
+                        }
+                    } catch (err) {
+                        showToast('Erro', 'Erro ao ler arquivo de backup: ' + err.message, 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+
+        function clearAllData() {
+            if (confirm('ATENÇÃO: Isso apagará todos os dados permanentemente. Esta ação não pode ser desfeita.')) {
+                if (confirm('Tem certeza absoluta? Digite "CONFIRMAR" para continuar.')) {
+                    const confirmText = prompt('Digite "CONFIRMAR" para continuar:');
+                    if (confirmText === 'CONFIRMAR') {
+                        data = {
+                            clients: [],
+                            sales: [],
+                            settings: {
+                                storeName: 'Minha Loja',
+                                storePhone: '(11) 99999-9999',
+                                storeEmail: 'contato@minhaloja.com',
+                                currency: 'BRL',
+                                defaultDays: 30,
+                                theme: 'light'
+                            },
+                            backups: []
+                        };
+                        nextId = 1;
+                        saveData();
+                        renderAll();
+                        showToast('Dados limpos', 'Todos os dados foram removidos permanentemente.', 'warning');
+                    }
+                }
+            }
+        }
+
+        function updateBackupInfo() {
+            const dataSize = new Blob([JSON.stringify(data)]).size;
+            document.getElementById('dataSize').textContent = `${(dataSize / 1024).toFixed(2)} KB`;
+            document.getElementById('totalClientsBackup').textContent = data.clients.length;
+            document.getElementById('totalSalesBackup').textContent = data.sales.length;
+        }
+
+        // ==================== REPORTS ====================
+        function exportReport(format) {
+            let content = '';
+            let filename = `relatorio_fiado_${new Date().toISOString().split('T')[0]}`;
+            
+            if (format === 'csv') {
+                content = 'Cliente,Produto,Valor,Data,Vencimento,Status\n';
+                data.sales.forEach(sale => {
+                    const client = data.clients.find(c => c.id === sale.clientId);
+                    content += `${client ? client.name : 'Removido'},${sale.product},${sale.value.toFixed(2)},${sale.date},${sale.dueDate},${sale.status}\n`;
+                });
+                filename += '.csv';
+            } else if (format === 'pdf') {
+                content = `RELATÓRIO FIADOPRO\nData: ${new Date().toLocaleString()}\n\n`;
+                content += `Total de vendas: ${data.sales.length}\n`;
+                content += `Total recebido: R$ ${data.sales.filter(s => s.status === 'pago').reduce((sum, s) => sum + s.value, 0).toFixed(2)}\n`;
+                content += `A receber: R$ ${data.sales.filter(s => s.status !== 'pago').reduce((sum, s) => sum + s.value, 0).toFixed(2)}\n\n`;
+                content += 'Vendas:\n';
+                data.sales.forEach(sale => {
+                    const client = data.clients.find(c => c.id === sale.clientId);
+                    content += `${client ? client.name : 'Removido'} | ${sale.product} | R$ ${sale.value.toFixed(2)} | ${sale.status}\n`;
+                });
+                filename += '.txt';
+            } else if (format === 'excel') {
+                content = 'Cliente\tProduto\tValor\tData\tVencimento\tStatus\n';
+                data.sales.forEach(sale => {
+                    const client = data.clients.find(c => c.id === sale.clientId);
+                    content += `${client ? client.name : 'Removido'}\t${sale.product}\t${sale.value.toFixed(2)}\t${sale.date}\t${sale.dueDate}\t${sale.status}\n`;
+                });
+                filename += '.xls';
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('Relatório exportado', `Arquivo ${format.toUpperCase()} gerado com sucesso!`, 'success');
+        }
+
+        // ==================== LOCAL STORAGE ====================
+        function saveData() {
+            try {
+                localStorage.setItem('fiadoProData', JSON.stringify(data));
+                localStorage.setItem('fiadoProNextId', nextId.toString());
+            } catch (e) {
+                console.error('Erro ao salvar dados:', e);
+                showToast('Erro', 'Erro ao salvar dados localmente.', 'error');
+            }
+        }
+
+        function loadData() {
+            try {
+                const savedData = localStorage.getItem('fiadoProData');
+                const savedNextId = localStorage.getItem('fiadoProNextId');
+                
+                if (savedData) {
+                    const parsed = JSON.parse(savedData);
+                    if (parsed.clients && parsed.sales && parsed.settings) {
+                        data = parsed;
+                    }
+                }
+                
+                if (savedNextId) {
+                    nextId = parseInt(savedNextId);
+                } else {
+                    nextId = data.sales.length + data.clients.length + 1;
+                }
+                
+                // Update settings inputs
+                document.getElementById('storeName').value = data.settings.storeName || 'Minha Loja';
+                document.getElementById('storePhone').value = data.settings.storePhone || '(11) 99999-9999';
+                document.getElementById('storeEmail').value = data.settings.storeEmail || 'contato@minhaloja.com';
+                document.getElementById('currency').value = data.settings.currency || 'BRL';
+                document.getElementById('defaultDays').value = data.settings.defaultDays || 30;
+                document.getElementById('themeSelect').value = data.settings.theme || 'light';
+                
+                // Apply theme
+                applyTheme(data.settings.theme || 'light');
+                
+            } catch (e) {
+                console.error('Erro ao carregar dados:', e);
+                showToast('Erro', 'Erro ao carregar dados. Usando dados padrão.', 'warning');
+            }
+        }
+
+        // ==================== CLOSE MODAL ON OUTSIDE ====================
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ==================== KEYBOARD SHORTCUTS ====================
+        document.addEventListener('keydown', function(e) {
+            // ESC to close modal
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+            // Ctrl+N for new sale
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                openModal('venda');
+            }
+            // Ctrl+Shift+C for new client
+            if (e.ctrlKey && e.shiftKey && e.key === 'C') {
+                e.preventDefault();
+                openModal('cliente');
+            }
+        });
+
+        // ==================== SERVICE WORKER (PWA) ====================
+        if ('serviceWorker' in navigator) {
+            // For PWA support in production
+            // navigator.serviceWorker.register('/sw.js');
+        }
+
+        console.log('FiadoPro v2.0 - Sistema de Vendas a Fiado');
+        console.log('Total de clientes:', data.clients.length);
+        console.log('Total de vendas:', data.sales.length);
+        console.log('Dados carregados com sucesso!');
     </script>
 </body>
 </html>
