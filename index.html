@@ -1,1 +1,351 @@
-324
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samuk Games Retro</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #eab308;
+            --primary-hover: #ca8a04;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        header {
+            background-color: #020617;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--primary);
+            padding-left: 10px;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .game-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px rgba(234, 179, 8, 0.2);
+        }
+
+        .game-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 2px solid #334155;
+        }
+
+        .game-info {
+            padding: 1rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        .game-genre {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .play-btn {
+            margin-top: auto;
+            background-color: var(--primary);
+            color: #000;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            text-transform: uppercase;
+        }
+
+        .play-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        /* MODAL STYLES */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-header {
+            width: 90%;
+            max-width: 1000px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: #1e293b;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .modal-title {
+            color: var(--primary);
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .close-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .close-btn:hover {
+            background: #dc2626;
+        }
+
+        .iframe-container {
+            width: 90%;
+            max-width: 1000px;
+            height: 75vh;
+            background-color: #000;
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-muted);
+            border-top: 1px solid #1e293b;
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Samuk Games Retro</h1>
+        <p>Os maiores clássicos do Super Nintendo direto no seu navegador!</p>
+    </header>
+
+    <div class="container">
+        <h2 class="section-title">Acervo de Clássicos</h2>
+        
+        <div class="games-grid" id="gamesContainer">
+            <!-- Os jogos serão injetados aqui via JavaScript -->
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Samuk Games Retro. Todos os direitos reservados.</p>
+    </footer>
+
+    <!-- MODAL DO JOGO -->
+    <div class="modal" id="gameModal">
+        <div class="modal-header">
+            <div class="modal-title" id="modalGameTitle">Nome do Jogo</div>
+            <button class="close-btn" onclick="closeGame()">X Fechar</button>
+        </div>
+        <div class="iframe-container">
+            <iframe id="gameIframe" src="" allowfullscreen></iframe>
+        </div>
+    </div>
+
+    <script>
+        // Dados extraídos da página original
+        const games = [
+            {
+                title: "Super Mario World",
+                genre: "Plataforma • 1990",
+                image: "https://classicgamezone.com/games/covers/snes/super-mario-world.webp",
+                url: "https://classicgamezone.com/pt/games/super-mario-world"
+            },
+            {
+                title: "Donkey Kong Country",
+                genre: "Plataforma • 1994",
+                image: "https://classicgamezone.com/games/covers/snes/donkey-kong-country.webp",
+                url: "https://classicgamezone.com/pt/games/donkey-kong-country"
+            },
+            {
+                title: "Mega Man X",
+                genre: "Ação/Plataforma • 1993",
+                image: "https://classicgamezone.com/games/covers/snes/mega-man-x.webp",
+                url: "https://classicgamezone.com/pt/games/mega-man-x"
+            },
+            {
+                title: "Super Mario Kart",
+                genre: "Corrida • 1992",
+                image: "https://classicgamezone.com/games/covers/snes/super-mario-kart.webp",
+                url: "https://classicgamezone.com/pt/games/super-mario-kart"
+            },
+            {
+                title: "Chrono Trigger",
+                genre: "RPG • 1995",
+                image: "https://classicgamezone.com/games/covers/snes/chrono-trigger.jpg",
+                url: "https://classicgamezone.com/pt/games/chrono-trigger"
+            },
+            {
+                title: "The Legend of Zelda: A Link to the Past",
+                genre: "Ação-Aventura • 1991",
+                image: "https://classicgamezone.com/games/covers/snes/zelda-link-to-the-past.webp",
+                url: "https://classicgamezone.com/pt/games/zelda-link-to-the-past"
+            },
+            {
+                title: "Super Metroid",
+                genre: "Ação-Aventura • 1994",
+                image: "https://classicgamezone.com/games/covers/snes/super-metroid.jpg",
+                url: "https://classicgamezone.com/pt/games/super-metroid"
+            },
+            {
+                title: "Street Fighter II Turbo",
+                genre: "Luta • 1993",
+                image: "https://classicgamezone.com/games/covers/snes/street-fighter-ii-turbo-hyper-fighting.webp",
+                url: "https://classicgamezone.com/pt/games/street-fighter-ii-turbo-hyper-fighting"
+            },
+            {
+                title: "Mortal Kombat 3 Ultimate",
+                genre: "Luta • 1996",
+                image: "https://classicgamezone.com/games/covers/snes/ultimate-mortal-kombat-3.jpg",
+                url: "https://classicgamezone.com/pt/games/ultimate-mortal-kombat-3"
+            },
+            {
+                title: "Super Mario RPG",
+                genre: "RPG • 1996",
+                image: "https://classicgamezone.com/games/covers/snes/super-mario-rpg-legend-of-the-seven-stars.webp",
+                url: "https://classicgamezone.com/pt/games/super-mario-rpg-legend-of-the-seven-stars"
+            },
+            {
+                title: "Aladdin",
+                genre: "Plataforma • 1993",
+                image: "https://classicgamezone.com/games/covers/snes/aladdin.jpg",
+                url: "https://classicgamezone.com/pt/games/aladdin"
+            },
+            {
+                title: "Top Gear",
+                genre: "Corrida • 1992",
+                image: "https://classicgamezone.com/games/covers/snes/top-gear.jpg",
+                url: "https://classicgamezone.com/pt/games/top-gear"
+            }
+        ];
+
+        // Função para renderizar os jogos na tela
+        function renderGames() {
+            const container = document.getElementById('gamesContainer');
+            
+            games.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                
+                card.innerHTML = `
+                    <img src="${game.image}" alt="${game.title}" class="game-image" loading="lazy">
+                    <div class="game-info">
+                        <div class="game-title">${game.title}</div>
+                        <div class="game-genre">${game.genre}</div>
+                        <button class="play-btn" onclick="openGame('${game.url}', '${game.title}')">▶ Jogar Agora</button>
+                    </div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+
+        // Funções do Modal
+        function openGame(url, title) {
+            const modal = document.getElementById('gameModal');
+            const iframe = document.getElementById('gameIframe');
+            const modalTitle = document.getElementById('modalGameTitle');
+
+            modalTitle.innerText = `Jogando: ${title}`;
+            iframe.src = url; // Carrega o site do emulador dentro do seu site
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Evita rolagem da página ao fundo
+        }
+
+        function closeGame() {
+            const modal = document.getElementById('gameModal');
+            const iframe = document.getElementById('gameIframe');
+
+            iframe.src = ""; // Para o jogo / aúdios
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restaura rolagem
+        }
+
+        // Inicia a renderização quando a página carrega
+        window.onload = renderGames;
+    </script>
+</body>
+</html>
