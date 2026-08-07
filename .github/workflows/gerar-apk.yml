@@ -47,8 +47,8 @@ jobs:
         
         # Copia os arquivos essenciais se eles existirem
         if [ -f index.html ]; then cp index.html www/index.html; else touch www/index.html; fi
-        if [ -f style.css ]; then cp style.css www/style.css; fi
-        if [ -f script.js ]; then cp script.js www/script.js; fi
+        if [ -f style.css ]; then cp style.css www/style.css; else touch www/style.css; fi
+        if [ -f script.js ]; then cp script.js www/script.js; else touch www/script.js; fi
 
         # Inteligência do Robô: Inserção automática de CSS e JS se o HTML não tiver integrado
         if grep -q "<head>" www/index.html && [ -f www/style.css ] && ! grep -q "style.css" www/index.html; then
@@ -80,28 +80,40 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO HÍBRIDA INTELIGENTE:
-        # Só ativa o modo online se você realmente digitar um link no painel.
-        # Se deixar vazio, ele roda o seu HTML/JS local perfeitamente!
+        # CONFIGURAÇÃO HÍBRIDA CORRIGIDA E ROBUSTA:
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
-        if [ -f "$CONFIG_FILE" ] && [ -n "$PANEL_URL" ]; then
-          echo "Link do painel detectado! Configurando aplicativo para modo web/online..."
-          node -e '
-            const fs = require("fs");
-            let config = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8"));
-            config.server = {
-              "url": process.argv[1],
-              "cleartext": true
-            };
-            config.android = {
-              "allowMixedContent": true,
-              "webContentsDebuggingEnabled": true
-            };
-            fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
-          ' "$PANEL_URL"
-        else
-          echo "Nenhum link informado. Mantendo o app totalmente local com seu HTML/JS puro..."
+        if [ -f "$CONFIG_FILE" ]; then
+          TARGET_URL="$PANEL_URL"
+          
+          # Se informou o link, configura para abrir o site online perfeitamente
+          if [ -n "$TARGET_URL" ]; then
+            echo "Link do painel detectado ($TARGET_URL)! Configurando aplicativo para modo web/online..."
+            node -e '
+              const fs = require("fs");
+              let config = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8"));
+              config.server = {
+                "url": process.argv[1],
+                "cleartext": true
+              };
+              config.android = {
+                "allowMixedContent": true,
+                "webContentsDebuggingEnabled": true
+              };
+              fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
+            ' "$TARGET_URL"
+          else
+            echo "Nenhum link informado. Mantendo o app totalmente local com seu HTML/JS puro..."
+          fi
+        fi
+
+        # GARANTIA DE PERMISSÃO DE INTERNET NO ANDROID (Essencial para links externos)
+        MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
+        if [ -f "$MANIFEST_FILE" ]; then
+          if ! grep -q "android.permission.INTERNET" "$MANIFEST_FILE"; then
+            sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST_FILE"
+            echo "Permissão de internet injetada com sucesso!"
+          fi
         fi
 
         # Aplica o nome exato no arquivo de strings nativo do Android
