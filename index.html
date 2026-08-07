@@ -1,1 +1,234 @@
-<div style="width:100%; height:100vh; display:flex;"><iframe src="https://tpanel.criarsite.online/index.php" allow="fullscreen; camera; microphone; geolocation; cookies"></iframe></div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Calculadora App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: #121212;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .calculator {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            max-height: 100vh;
+            background-color: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 20px;
+        }
+
+        @media (min-width: 401px) {
+            .calculator {
+                height: 700px;
+                border-radius: 24px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            }
+        }
+
+        .display {
+            padding: 20px 10px;
+            text-align: right;
+            word-break: break-all;
+            word-wrap: break-word;
+        }
+
+        .previous-operand {
+            color: #888;
+            font-size: 1.2rem;
+            min-height: 1.5rem;
+        }
+
+        .current-operand {
+            color: #ffffff;
+            font-size: 3rem;
+            font-weight: 300;
+            margin-top: 5px;
+        }
+
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding-bottom: 20px;
+        }
+
+        button {
+            cursor: pointer;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 50%;
+            aspect-ratio: 1;
+            background-color: #2d2d2d;
+            color: #ffffff;
+            transition: background-color 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button:active {
+            filter: brightness(1.3);
+        }
+
+        .btn-function {
+            background-color: #3f3f3f;
+            color: #ff9f0a;
+        }
+
+        .btn-operator {
+            background-color: #ff9f0a;
+            color: #ffffff;
+            font-size: 1.8rem;
+        }
+
+        .btn-operator:active, .btn-function:active {
+            filter: brightness(1.2);
+        }
+
+        .btn-zero {
+            grid-column: span 2;
+            border-radius: 40px;
+            aspect-ratio: auto;
+            justify-content: flex-start;
+            padding-left: 30px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="calculator">
+        <div class="display">
+            <div data-previous-operand class="previous-operand"></div>
+            <div data-current-operand class="current-operand">0</div>
+        </div>
+        <div class="buttons-grid">
+            <button class="btn-function" onclick="clearDisplay()">AC</button>
+            <button class="btn-function" onclick="deleteNumber()">DEL</button>
+            <button class="btn-function" onclick="appendNumber('%')">%</button>
+            <button class="btn-operator" onclick="chooseOperation('÷')">÷</button>
+            
+            <button onclick="appendNumber('7')">7</button>
+            <button onclick="appendNumber('8')">8</button>
+            <button onclick="appendNumber('9')">9</button>
+            <button class="btn-operator" onclick="chooseOperation('×')">×</button>
+            
+            <button onclick="appendNumber('4')">4</button>
+            <button onclick="appendNumber('5')">5</button>
+            <button onclick="appendNumber('6')">6</button>
+            <button class="btn-operator" onclick="chooseOperation('-')">-</button>
+            
+            <button onclick="appendNumber('1')">1</button>
+            <button onclick="appendNumber('2')">2</button>
+            <button onclick="appendNumber('3')">3</button>
+            <button class="btn-operator" onclick="chooseOperation('+')">+</button>
+            
+            <button class="btn-zero" onclick="appendNumber('0')">0</button>
+            <button onclick="appendNumber('.')">.</button>
+            <button class="btn-operator" onclick="compute()">=</button>
+        </div>
+    </div>
+
+    <script>
+        let currentOperand = '0';
+        let previousOperand = '';
+        let operation = undefined;
+
+        const currentOperandTextElement = document.querySelector('[data-current-operand]');
+        const previousOperandTextElement = document.querySelector('[data-previous-operand]');
+
+        function clearDisplay() {
+            currentOperand = '0';
+            previousOperand = '';
+            operation = undefined;
+            updateDisplay();
+        }
+
+        function deleteNumber() {
+            if (currentOperand === '0') return;
+            if (currentOperand.length === 1) {
+                currentOperand = '0';
+            } else {
+                currentOperand = currentOperand.toString().slice(0, -1);
+            }
+            updateDisplay();
+        }
+
+        function appendNumber(number) {
+            if (number === '.' && currentOperand.includes('.')) return;
+            if (currentOperand === '0' && number !== '.') {
+                currentOperand = number;
+            } else {
+                currentOperand = currentOperand.toString() + number.toString();
+            }
+            updateDisplay();
+        }
+
+        function chooseOperation(op) {
+            if (currentOperand === '') return;
+            if (previousOperand !== '') {
+                compute();
+            }
+            operation = op;
+            previousOperand = currentOperand;
+            currentOperand = '';
+            updateDisplay();
+        }
+
+        function compute() {
+            let computation;
+            const prev = parseFloat(previousOperand);
+            const current = parseFloat(currentOperand);
+            if (isNaN(prev) || isNaN(current)) return;
+
+            switch (operation) {
+                case '+':
+                    computation = prev + current;
+                    break;
+                case '-':
+                    computation = prev - current;
+                    break;
+                case '×':
+                    computation = prev * current;
+                    break;
+                case '÷':
+                    computation = prev / current;
+                    break;
+                default:
+                    return;
+            }
+
+            currentOperand = computation;
+            operation = undefined;
+            previousOperand = '';
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            currentOperandTextElement.innerText = currentOperand;
+            if (operation != null) {
+                previousOperandTextElement.innerText = `${previousOperand} ${operation}`;
+            } else {
+                previousOperandTextElement.innerText = '';
+            }
+        }
+    </script>
+</body>
+</html>
