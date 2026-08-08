@@ -1,4 +1,4 @@
-name: Gerar APK Profissional Híbrido
+name: Gerar APK Profissional
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: true
         default: 'MeuApp'
       panel_url:
-        description: 'Link do Painel (Opcional - deixe vazio para usar HTML local)'
+        description: 'Link do Painel'
         required: false
         default: ''
       enviou_logo:
@@ -45,17 +45,18 @@ jobs:
         # Monta a estrutura da WEB para o App
         mkdir -p www
         
-        # Copia os arquivos essenciais se eles existirem
+        # Copia os 3 arquivos essenciais se eles existirem
         if [ -f index.html ]; then cp index.html www/index.html; else touch www/index.html; fi
         if [ -f style.css ]; then cp style.css www/style.css; else touch www/style.css; fi
         if [ -f script.js ]; then cp script.js www/script.js; else touch www/script.js; fi
 
-        # Inteligência do Robô: Inserção automática de CSS e JS se o HTML não tiver integrado
-        if grep -q "<head>" www/index.html && [ -f www/style.css ] && ! grep -q "style.css" www/index.html; then
+        # Inteligência do Robô: Se os arquivos foram enviados, mas o HTML não conectou eles, 
+        # o robô insere as tags automaticamente na aba <head> e antes de fechar </body>
+        if grep -q "<head>" www/index.html && ! grep -q "style.css" www/index.html; then
             sed -i 's|<head>|<head>\n    <link rel="stylesheet" href="style.css">|' www/index.html
         fi
         
-        if grep -q "</body>" www/index.html && [ -f www/script.js ] && ! grep -q "script.js" www/index.html; then
+        if grep -q "</body>" www/index.html && ! grep -q "script.js" www/index.html; then
             sed -i 's|</body>|    <script src="script.js"></script>\n</body>|' www/index.html
         fi
 
@@ -80,15 +81,42 @@ jobs:
         npx cap add android
 
         # =========================================================================
-        # CONFIGURAÇÃO HÍBRIDA CORRIGIDA E ROBUSTA:
+        # CONFIGURAÇÃO DE URL DINÂMICA (CORRIGIDA)
         # =========================================================================
         CONFIG_FILE="capacitor.config.json"
         if [ -f "$CONFIG_FILE" ]; then
-          TARGET_URL="$PANEL_URL"
           
-          # Se informou o link, configura para abrir o site online perfeitamente
-          if [ -n "$TARGET_URL" ]; then
-            echo "Link do painel detectado ($TARGET_URL)! Configurando aplicativo para modo web/online..."
+          # Verifica se o usuário enviou um link manualmente (Modo Link)
+          if [ -n "$PANEL_URL" ] && [ "$PANEL_URL" != " " ]; then
+            TARGET_URL="$PANEL_URL"
+            echo "✅ Usando link enviado pelo usuário (Modo Link): $TARGET_URL"
+          else
+            # Modo Código - usa o arquivo index.html local
+            echo "📄 Modo Código detectado - usando arquivos locais"
+            TARGET_URL=""
+          fi
+
+          # Se não tiver URL (modo código), configura sem server.url
+          if [ -z "$TARGET_URL" ]; then
+            node -e '
+              const fs = require("fs");
+              let config = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8"));
+              
+              // Remove a configuração de servidor externo (usa arquivos locais)
+              if (config.server) {
+                delete config.server;
+              }
+              
+              // Permite conteúdo misto e debug
+              config.android = {
+                "allowMixedContent": true,
+                "webContentsDebuggingEnabled": true
+              };
+              
+              fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
+            '
+          else
+            # Modo Link - configura com a URL externa
             node -e '
               const fs = require("fs");
               let config = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8"));
@@ -102,17 +130,6 @@ jobs:
               };
               fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
             ' "$TARGET_URL"
-          else
-            echo "Nenhum link informado. Mantendo o app totalmente local com seu HTML/JS puro..."
-          fi
-        fi
-
-        # GARANTIA DE PERMISSÃO DE INTERNET NO ANDROID (Essencial para links externos)
-        MANIFEST_FILE="android/app/src/main/AndroidManifest.xml"
-        if [ -f "$MANIFEST_FILE" ]; then
-          if ! grep -q "android.permission.INTERNET" "$MANIFEST_FILE"; then
-            sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST_FILE"
-            echo "Permissão de internet injetada com sucesso!"
           fi
         fi
 
