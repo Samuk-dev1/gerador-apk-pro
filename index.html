@@ -1,1 +1,348 @@
-<div style="width:100%; height:100vh; display:flex; flex-direction:column;"><iframe src="https://socialmasterofc.sigmab.pro/" style="width:100%; height:100%; border:none;" allow="fullscreen; camera; microphone; geolocation; cookies"></iframe></div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZapCobrança - Dashboard de Agendamentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        .active-filter { border: 2px solid #4f46e5 !important; transform: scale(1.02); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans flex h-screen overflow-hidden">
+
+    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+    
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 flex flex-col shadow-xl">
+        <div class="p-5 bg-slate-950 flex items-center justify-between border-b border-slate-800">
+            <div class="flex items-center gap-2 font-bold text-white text-xl">
+                <i class="ph ph-wallet text-indigo-500 text-2xl"></i>
+                <span>ZapGestão</span>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+        </div>
+        <nav class="flex-1 p-4 space-y-1">
+            <button onclick="definirFiltro('todos')" class="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 text-left font-medium"><i class="ph ph-squares-four text-xl"></i> Dashboard</button>
+            <button onclick="toggleModal('modalNovo')" class="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl text-left font-medium"><i class="ph ph-plus-circle text-xl"></i> Nova Venda/Item</button>
+        </nav>
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">v1.0 - 100% Funcional</div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-600"><i class="ph ph-list text-2xl"></i></button>
+                <h1 class="text-xl font-bold text-slate-800">Painel Financeiro</h1>
+            </div>
+            <button onclick="toggleModal('modalNovo')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md flex items-center gap-2 transition-all">
+                <i class="ph ph-plus text-bold"></i> Lançar Item
+            </button>
+        </header>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+            
+            <div id="filtro-aviso" class="hidden bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-sm flex justify-between items-center">
+                <span>Filtrando tabela por: <strong id="filtro-nome">Status</strong></span>
+                <button onclick="definirFiltro('todos')" class="underline font-bold">Ver Todos</button>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <div onclick="definirFiltro('todos')" id="card-filtro-todos" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-indigo-400 transition-all flex flex-col justify-between active-filter">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Todos os Itens</span>
+                    <h3 class="text-xl md:text-2xl font-bold mt-2" id="db-todos">R$ 0,00</h3>
+                    <span class="text-[10px] text-indigo-600 font-medium mt-1">Clique para ver todos</span>
+                </div>
+
+                <div onclick="definirFiltro('pago')" id="card-filtro-pago" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-emerald-400 transition-all flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1">Já Recebidos <div class="w-2 h-2 bg-emerald-500 rounded-full"></div></span>
+                    <h3 class="text-xl md:text-2xl font-bold text-emerald-600 mt-2" id="db-pagos">R$ 0,00</h3>
+                    <span class="text-[10px] text-emerald-600 font-medium mt-1">Clique para filtrar</span>
+                </div>
+
+                <div onclick="definirFiltro('hoje')" id="card-filtro-hoje" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-amber-400 transition-all flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1">Vencendo Hoje <div class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></div></span>
+                    <h3 class="text-xl md:text-2xl font-bold text-amber-600 mt-2" id="db-hoje">R$ 0,00</h3>
+                    <span class="text-[10px] text-amber-600 font-medium mt-1">Atenção imediata</span>
+                </div>
+
+                <div onclick="definirFiltro('atrasado')" id="card-filtro-atrasado" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-rose-400 transition-all flex flex-col justify-between">
+                    <span class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1">Em Atraso <div class="w-2 h-2 bg-rose-500 rounded-full"></div></span>
+                    <h3 class="text-xl md:text-2xl font-bold text-rose-600 mt-2" id="db-atrasados">R$ 0,00</h3>
+                    <span class="text-[10px] text-rose-600 font-medium mt-1">Inadimplentes</span>
+                </div>
+
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-200 bg-slate-50 font-bold text-slate-700 text-sm">
+                    Lançamentos Detalhados
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr class="bg-slate-100/70 text-slate-500 text-[11px] uppercase font-bold border-b border-slate-200">
+                                <th class="px-4 py-3">Cliente</th>
+                                <th class="px-4 py-3">O que comprou?</th>
+                                <th class="px-4 py-3">Vencimento</th>
+                                <th class="px-4 py-3">Valor</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3 text-center">Ações / Cobrança</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-itens" class="divide-y divide-slate-100 text-sm">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="modalNovo" class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-xs">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h2 class="text-lg font-bold text-slate-800">Cadastrar Nova Venda</h2>
+                <button onclick="toggleModal('modalNovo')" class="text-slate-400 hover:text-slate-600"><i class="ph ph-x text-xl"></i></button>
+            </div>
+
+            <form id="formVenda" onsubmit="salvarNovaVenda(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome do Cliente</label>
+                    <input type="text" id="addNome" required placeholder="Ex: João da Silva" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">WhatsApp do Cliente (Com DDD)</label>
+                    <input type="tel" id="addWhats" required placeholder="Ex: 11999998888" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">O que foi vendido?</label>
+                    <input type="text" id="addProduto" required placeholder="Ex: Camiseta preta, Serviço X" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor (R$)</label>
+                        <input type="number" id="addValor" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Vencimento</label>
+                        <input type="date" id="addData" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Barra de Observação</label>
+                    <textarea id="addObs" placeholder="Algum detalhe ou prazo extra..." rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
+                </div>
+
+                <div class="pt-2 flex gap-2 justify-end text-sm">
+                    <button type="button" onclick="toggleModal('modalNovo')" class="px-4 py-2 bg-slate-100 font-medium rounded-xl text-slate-600">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 font-semibold text-white rounded-xl shadow-md">Salvar Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Carrega dados iniciais do LocalStorage ou inicia vazio se for o primeiro acesso
+        let bdVendas = JSON.parse(localStorage.getItem('zap_vendas')) || [
+            { id: 1, cliente: "Carlos Alberto", whats: "5511999998888", produto: "Tênis Esportivo", valor: 350.00, data: "2026-05-20", obs: "Pagamento via Pix", pago: false },
+            { id: 2, cliente: "Juliana Costa", whats: "5511988887777", produto: "Manutenção Estética", valor: 180.00, data: new Date().toISOString().split('T')[0], obs: "Retorno mensal", pago: false },
+            { id: 3, cliente: "Marcos Lima", whats: "5521977776666", produto: "Smartphone Usado", valor: 1200.00, data: "2026-06-10", obs: "Parcela única", pago: true }
+        ];
+
+        let filtroAtual = 'todos';
+
+        // Salvar dados no LocalStorage do celular/computador
+        function salvarNoLocalStorage() {
+            localStorage.setItem('zap_vendas', JSON.stringify(bdVendas));
+        }
+
+        // Formatações Visuais
+        const formatarGrana = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+        const formatarDataBR = (d) => d.split('-').reverse().join('/');
+
+        // Controlar visibilidade de janelas
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('overlay').classList.toggle('hidden');
+        }
+        function toggleModal(id) {
+            document.getElementById(id).classList.toggle('hidden');
+        }
+
+        // Define o filtro clicando nas abas do dashboard
+        function definirFiltro(tipo) {
+            filtroAtual = tipo;
+            
+            // Gerencia classes visuais dos cards clicados
+            document.querySelectorAll('[id^="card-filtro-"]').forEach(card => card.classList.remove('active-filter'));
+            document.getElementById(`card-filtro-${tipo}`).classList.add('active-filter');
+
+            const aviso = document.getElementById('filtro-aviso');
+            const nomeFiltro = document.getElementById('filtro-nome');
+            
+            if(tipo === 'todos') {
+                aviso.classList.add('hidden');
+            } else {
+                aviso.classList.remove('hidden');
+                nomeFiltro.innerText = tipo === 'pago' ? 'Já Recebidos' : tipo === 'hoje' ? 'Vencendo Hoje' : 'Em Atraso';
+            }
+
+            renderizarSistema();
+        }
+
+        // Processa dados e desenha a tela inteira
+        function renderizarSistema() {
+            const tabela = document.getElementById('tabela-itens');
+            tabela.innerHTML = '';
+
+            let totalTodos = 0, totalPagos = 0, totalHoje = 0, totalAtrasados = 0;
+            const hojeStr = new Date().toISOString().split('T')[0];
+
+            bdVendas.forEach(item => {
+                // Cálculo inteligente de status por item
+                let status = 'pendente';
+                if (item.pago) {
+                    status = 'pago';
+                } else if (item.data < hojeStr) {
+                    status = 'atrasado';
+                } else if (item.data === hojeStr) {
+                    status = 'hoje';
+                }
+
+                // Somatórios para a Dashboard
+                totalTodos += item.valor;
+                if (status === 'pago') totalPagos += item.valor;
+                if (status === 'hoje') totalHoje += item.valor;
+                if (status === 'atrasado') totalAtrasados += item.valor;
+
+                // Regra do Filtro Ativo
+                if (filtroAtual !== 'todos' && filtroAtual !== status) return;
+
+                // Definição de cores e badges baseados nos critérios pedidos
+                let badgeStyle = '', statusTxt = '';
+                if(status === 'pago') {
+                    badgeStyle = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                    statusTxt = 'Recebido';
+                } else if(status === 'hoje') {
+                    badgeStyle = 'bg-amber-100 text-amber-700 border-amber-200 animate-pulse';
+                    statusTxt = 'Vence Hoje';
+                } else if(status === 'atrasado') {
+                    badgeStyle = 'bg-rose-100 text-rose-700 border-rose-200';
+                    statusTxt = 'Atrasado';
+                } else {
+                    badgeStyle = 'bg-slate-100 text-slate-600 border-slate-200';
+                    statusTxt = 'Agendado';
+                }
+
+                // Criação do link do WhatsApp dinâmico trazendo os valores e itens comprados
+                const textoWhats = encodeURIComponent(`Olá ${item.cliente}, tudo bem? Passando para lembrar do agendamento referente à compra de *${item.produto}* no valor de *${formatarGrana(item.valor)}* com vencimento em *${formatarDataBR(item.data)}*. \nObs: ${item.obs || 'Nenhuma'}`);
+                const linkZap = `https://wa.me/${item.whats.replace(/\D/g, '')}?text=${textoWhats}`;
+
+                // Renderiza a linha na tabela
+                tabela.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-4 py-4 font-semibold text-slate-900">${item.cliente}</td>
+                        <td class="px-4 py-4 text-slate-600 max-w-[200px] truncate" title="${item.produto}">
+                            <span class="font-medium block">${item.produto}</span>
+                            <span class="text-xs text-slate-400 block truncate">${item.obs || 'Sem obs'}</span>
+                        </td>
+                        <td class="px-4 py-4 text-slate-600 font-medium">${formatarDataBR(item.data)}</td>
+                        <td class="px-4 py-4 font-bold text-slate-900">${formatarGrana(item.valor)}</td>
+                        <td class="px-4 py-4">
+                            <span class="px-2 py-1 text-xs border rounded-full font-bold inline-block ${badgeStyle}">${statusTxt}</span>
+                        </td>
+                        <td class="px-4 py-4 text-center space-x-2">
+                            ${!item.pago ? `
+                                <button onclick="darBaixaPagamento(${item.id})" class="bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white px-2.5 py-1.5 rounded-lg border border-emerald-200 text-xs font-bold transition-all" title="Marcar como Pago">Baixar</button>
+                            ` : `
+                                <span class="text-xs text-slate-400 font-medium inline-block">Concluído</span>
+                            `}
+                            
+                            <a href="${linkZap}" target="_blank" class="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-lg shadow-sm transition-all" title="Cobrar via WhatsApp">
+                                <i class="ph ph-whatsapp-logo text-lg font-bold"></i>
+                            </a>
+                            
+                            <button onclick="deletarItem(${item.id})" class="text-slate-400 hover:text-rose-500 transition-colors" title="Excluir"><i class="ph ph-trash text-lg"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Atualiza os contadores no topo (Dashboard)
+            document.getElementById('db-todos').innerText = formatarGrana(totalTodos);
+            document.getElementById('db-pagos').innerText = formatarGrana(totalPagos);
+            document.getElementById('db-hoje').innerText = formatarGrana(totalHoje);
+            document.getElementById('db-atrasados').innerText = formatarGrana(totalAtrasados);
+        }
+
+        // Lógica: Cadastrar nova venda
+        function salvarNovaVenda(e) {
+            e.preventDefault();
+
+            // Garante que o telefone possua o código do país caso o usuário esqueça
+            let tel = document.getElementById('addWhats').value.replace(/\D/g, '');
+            if(tel.length === 11 || tel.length === 10) {
+                tel = "55" + tel;
+            }
+
+            const novaVenda = {
+                id: Date.now(),
+                cliente: document.getElementById('addNome').value,
+                whats: tel,
+                produto: document.getElementById('addProduto').value,
+                valor: parseFloat(document.getElementById('addValor').value),
+                data: document.getElementById('addData').value,
+                obs: document.getElementById('addObs').value,
+                pago: false
+            };
+
+            bdVendas.push(novaVenda);
+            salvarNoLocalStorage();
+            document.getElementById('formVenda').reset();
+            toggleModal('modalNovo');
+            renderizarSistema();
+        }
+
+        // Lógica: Mudar status para Pago (Dar baixa)
+        function darBaixaPagamento(id) {
+            const index = bdVendas.findIndex(item => item.id === id);
+            if(index !== -1) {
+                bdVendas[index].pago = true;
+                salvarNoLocalStorage();
+                renderizarSistema();
+            }
+        }
+
+        // Lógica: Deletar item individual
+        function deletarItem(id) {
+            if(confirm("Deseja realmente apagar esta venda permanentemente?")) {
+                bdVendas = bdVendas.filter(item => item.id !== id);
+                salvarNoLocalStorage();
+                renderizarSistema();
+            }
+        }
+
+        // Inicializador automático ao abrir a tela
+        window.onload = () => {
+            renderizarSistema();
+        };
+    </script>
+</body>
+</html>
