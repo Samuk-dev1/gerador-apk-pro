@@ -1,148 +1,289 @@
-name: Gerar APK IPTV com Notificações
+name: Gerar APK Profissional
+
 on:
   workflow_dispatch:
     inputs:
       app_name:
         description: 'Nome do Aplicativo'
         required: true
-        default: 'Meu Sistema IPTV'
+        default: 'Meu App'
       panel_url:
-        description: 'Link do Painel/Projeto (deixe vazio se enviar o ZIP)'
+        description: 'URL do Painel (modo link)'
         required: false
         default: ''
       enviou_logo:
-        description: 'Usuário enviou logo?'
+        description: 'Enviou logo? (sim/nao)'
         required: false
         default: 'nao'
       firebase_sender_id:
-        description: 'ID do Remetente Firebase (para notificações)'
-        required: true
-        default: 'SEU_ID_AQUI'
+        description: 'Firebase Sender ID (para notificações)'
+        required: false
+        default: ''
       arquivo_zip:
-        description: 'Link ou caminho do ZIP do projeto (se não usar link)'
+        description: 'URL do arquivo ZIP do projeto'
         required: false
         default: ''
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    
     steps:
-    - name: Baixar arquivos do repositório
-      uses: actions/checkout@v4
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
 
-    - name: Configurar Node.js 20
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-    - name: Configurar Java 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Baixar e extrair ZIP do Projeto (se enviado)
-      if: ${{ inputs.arquivo_zip != '' }}
-      run: |
-        echo "📦 Baixando projeto enviado por ZIP..."
-        wget -O projeto_completo.zip "${{ inputs.arquivo_zip }}"
-        unzip -o projeto_completo.zip -d .
-        rm projeto_completo.zip
+      - name: Instalar dependências do Capacitor
+        run: |
+          npm init -y
+          npm install @capacitor/core@5 @capacitor/cli@5 @capacitor/android@5
+          npm install @capacitor/local-notifications@5
+          npm install @capacitor/push-notifications@5
 
-    - name: Instalar dependências e preparar
-      run: |
-        npm init -y
-        npm install @capacitor/core@5 @capacitor/android@5 @capacitor/cli@5 @capacitor/push-notifications@5
+      - name: Baixar e extrair arquivo ZIP (se enviado)
+        if: ${{ inputs.arquivo_zip != '' }}
+        run: |
+          echo "Baixando arquivo ZIP do projeto..."
+          wget -O projeto.zip "${{ inputs.arquivo_zip }}"
+          if [ -f projeto.zip ]; then
+            echo "Arquivo baixado com sucesso!"
+            ls -la projeto.zip
+            # Extrai para pasta temporária
+            mkdir -p projeto_extraido
+            unzip -o projeto.zip -d projeto_extraido
+            echo "Conteúdo extraído:"
+            find projeto_extraido -maxdepth 3 -type f | head -30
+            
+            # Verifica se tem index.html na raiz ou em subpasta
+            if [ -f projeto_extraido/index.html ]; then
+              echo "index.html encontrado na raiz do zip"
+              mkdir -p www
+              cp -r projeto_extraido/* www/
+            else
+              # Procura index.html em subpastas
+              INDEX_PATH=$(find projeto_extraido -name "index.html" -type f | head -1)
+              if [ -n "$INDEX_PATH" ]; then
+                PASTA=$(dirname "$INDEX_PATH")
+                echo "index.html encontrado em: $PASTA"
+                mkdir -p www
+                cp -r "$PASTA"/* www/
+              else
+                echo "⚠️ index.html não encontrado no ZIP! Usando arquivo do repositório."
+                mkdir -p www
+                if [ -f index.html ]; then cp index.html www/; fi
+                if [ -f style.css ]; then cp style.css www/; fi
+                if [ -f script.js ]; then cp script.js www/; fi
+              fi
+            fi
+            rm -rf projeto_extraido projeto.zip
+          else
+            echo "Falha ao baixar ZIP. Usando arquivos do repositório."
+            mkdir -p www
+            if [ -f index.html ]; then cp index.html www/; fi
+            if [ -f style.css ]; then cp style.css www/; fi
+            if [ -f script.js ]; then cp script.js www/; fi
+          fi
 
-        mkdir -p www
-        # Copia arquivos do projeto
-        [ -f index.html ] && cp index.html www/ || touch www/index.html
-        [ -f style.css ] && cp style.css www/ || touch www/style.css
-        [ -f script.js ] && cp script.js www/ || touch www/script.js
-
-        # Insere CSS e JS automaticamente no HTML
-        if grep -q "<head>" www/index.html && ! grep -q "style.css" www/index.html; then
-          sed -i 's|<head>|<head>\n    <link rel="stylesheet" href="style.css">|' www/index.html
-        fi
-        if grep -q "</body>" www/index.html && ! grep -q "script.js" www/index.html; then
-          sed -i 's|</body>|    <script src="script.js"></script>\n</body>|' www/index.html
-        fi
-
-        # Limpa logo se não foi enviada
-        if [ "${{ inputs.enviou_logo }}" = "nao" ]; then rm -f logo.png; fi
-
-        # Gera ID único do app
-        APP_NAME="${{ inputs.app_name }}"
-        APP_ID=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
-        [ -z "$APP_ID" ] && APP_ID="appiptv"
-
-        # Inicializa Capacitor com Push Notifications
-        npx cap init "$APP_NAME" com.iptv.$APP_ID --web-dir www
-        npx cap add android
-
-    - name: Configurar Notificações Firebase e Permissões
-      run: |
-        # Atualiza capacitor.config.json com Push
-        node -e '
-          const fs = require("fs");
-          let config = JSON.parse(fs.readFileSync("capacitor.config.json", "utf8"));
+      - name: Copiar arquivos para pasta www (se não veio ZIP)
+        if: ${{ inputs.arquivo_zip == '' }}
+        run: |
+          mkdir -p www
+          if [ -f index.html ]; then cp index.html www/; fi
+          if [ -f style.css ]; then cp style.css www/; fi
+          if [ -f script.js ]; then cp script.js www/; fi
           
-          const PANEL_URL = process.argv[1];
-          if(PANEL_URL && PANEL_URL.trim() !== ""){
-            config.server = { "url": PANEL_URL, "cleartext": true };
-          } else {
-            delete config.server;
-          }
+          # Modo Link: injeta iframe no index.html
+          if [ -n "${{ inputs.panel_url }}" ]; then
+            echo "Modo LINK ativado: ${{ inputs.panel_url }}"
+            cat > www/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+            iframe { width: 100%; height: 100%; border: none; }
+          </style>
+          </head>
+          <body>
+          <iframe src="${{ inputs.panel_url }}" allow="fullscreen; camera; microphone; geolocation; autoplay"></iframe>
+          </body>
+          </html>
+          EOF
+          fi
 
-          config.android = {
-            "allowMixedContent": true,
-            "webContentsDebuggingEnabled": true
-          };
+      - name: Injetar tags CSS e JS no index.html
+        run: |
+          if [ -f www/index.html ]; then
+            # Verifica se já tem as tags necessárias
+            if ! grep -q "viewport" www/index.html; then
+              sed -i 's/<head>/<head>\n<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">/' www/index.html
+            fi
+            if ! grep -q "color-scheme" www/index.html; then
+              sed -i 's/<head>/<head>\n<meta name="color-scheme" content="light dark">/' www/index.html
+            fi
+            echo "index.html preparado com sucesso!"
+          fi
 
-          config.plugins = {
-            "PushNotifications": {
-              "senderId": process.argv[2]
+      - name: Listar conteúdo da pasta www
+        run: |
+          echo "=== CONTEÚDO DA PASTA WWW ==="
+          ls -la www/
+          echo "============================="
+
+      - name: Inicializar e configurar Capacitor
+        run: |
+          APP_NAME="${{ inputs.app_name }}"
+          APP_ID="com.nexusapk.${APP_NAME,,}"
+          APP_ID="${APP_ID// /-}"
+          APP_ID="${APP_ID//[^a-z0-9.-]/}"
+          
+          npx cap init "$APP_NAME" "$APP_ID" --web-dir=www
+          
+          # Configurar capacitor.config.json com Firebase e plugins
+          cat > capacitor.config.json << EOF
+          {
+            "appId": "$APP_ID",
+            "appName": "$APP_NAME",
+            "webDir": "www",
+            "bundledWebRuntime": false,
+            "android": {
+              "allowMixedContent": true
+            },
+            "plugins": {
+              "LocalNotifications": {
+                "smallIcon": "ic_stat_icon_config_sample",
+                "iconColor": "#8b5cf6",
+                "sound": "beep.wav"
+              }
+              EOF
+          
+          # Adiciona configuração do Push se tiver Firebase Sender ID
+          if [ -n "${{ inputs.firebase_sender_id }}" ]; then
+            cat >> capacitor.config.json << EOF
+              ,
+              "PushNotifications": {
+                "presentationOptions": ["badge", "sound", "alert"],
+                "senderId": "${{ inputs.firebase_sender_id }}"
+              }
+            EOF
+          fi
+          
+          cat >> capacitor.config.json << EOF
             }
-          };
+          }
+          EOF
+          
+          echo "=== capacitor.config.json ==="
+          cat capacitor.config.json
 
-          fs.writeFileSync("capacitor.config.json", JSON.stringify(config, null, 2));
-        ' "${{ inputs.panel_url }}" "${{ inputs.firebase_sender_id }}"
+      - name: Adicionar plataforma Android
+        run: npx cap add android
 
-        # Adiciona permissões no AndroidManifest.xml
-        MANIFEST="android/app/src/main/AndroidManifest.xml"
-        sed -i '/<manifest /a xmlns:tools="http://schemas.android.com/tools"' "$MANIFEST"
-        sed -i '/<application /a tools:replace="android:allowBackup"' "$MANIFEST"
-        
-        # Insere permissões de notificação e internet
-        grep -q "POST_NOTIFICATIONS" "$MANIFEST" || sed -i '/<uses-permission/a <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />' "$MANIFEST"
-        grep -q "INTERNET" "$MANIFEST" || sed -i '/<uses-permission/a <uses-permission android:name="android.permission.INTERNET" />' "$MANIFEST"
-        grep -q "VIBRATE" "$MANIFEST" || sed -i '/<uses-permission/a <uses-permission android:name="android.permission.VIBRATE" />' "$MANIFEST"
+      - name: Configurar permissões no AndroidManifest.xml
+        run: |
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          
+          # Adiciona permissões necessárias para notificações
+          if ! grep -q "POST_NOTIFICATIONS" "$MANIFEST"; then
+            sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>\n    <uses-permission android:name="android.permission.VIBRATE" \/>\n    <uses-permission android:name="android.permission.WAKE_LOCK" \/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" \/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" \/>\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" \/>' "$MANIFEST"
+          fi
+          
+          echo "=== AndroidManifest.xml com permissões ==="
+          grep -n "uses-permission" "$MANIFEST"
 
-    - name: Aplicar Ícone Personalizado
-      run: |
-        if [ -f logo.png ]; then
-          sudo apt update && sudo apt install -y imagemagick > /dev/null 2>&1
-          for size in 48 72 96 144 192; do
-            mkdir -p android/app/src/main/res/mipmap-${size/48/mdpi}/${size/72/hdpi}/${size/96/xhdpi}/${size/144/xxhdpi}/${size/192/xxxhdpi}
-            convert logo.png -resize ${size}x${size}! android/app/src/main/res/mipmap-*/ic_launcher.png
-            convert logo.png -resize ${size}x${size}! android/app/src/main/res/mipmap-*/ic_launcher_round.png
-          done
-          find android/app/src/main/res/ -name "ic_launcher.xml" -delete
-        fi
-        # Atualiza nome do app
-        sed -i "s/<string name=\"app_name\">.*<\/string>/<string name=\"app_name\">${{ inputs.app_name }}<\/string>/" android/app/src/main/res/values/strings.xml
-        npx cap sync android
+      - name: Registrar plugins no MainActivity.java
+        run: |
+          MAIN="android/app/src/main/java/com/nexusapk/*/MainActivity.java"
+          MAIN_FILE=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
+          
+          if [ -f "$MAIN_FILE" ]; then
+            # Verifica se já tem imports
+            if ! grep -q "LocalNotifications" "$MAIN_FILE"; then
+              sed -i '/import android.os.Bundle;/a\import com.capacitorjs.plugins.localnotifications.LocalNotificationsPlugin;\nimport com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin;' "$MAIN_FILE"
+            fi
+            
+            # Verifica se já tem registro dos plugins
+            if ! grep -q "LocalNotificationsPlugin" "$MAIN_FILE"; then
+              sed -i 's/public class MainActivity extends BridgeActivity {/public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        registerPlugin(LocalNotificationsPlugin.class);\n        registerPlugin(PushNotificationsPlugin.class);\n    }/' "$MAIN_FILE"
+            fi
+            
+            echo "=== MainActivity.java atualizado ==="
+            cat "$MAIN_FILE"
+          fi
 
-    - name: Compilar APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon
+      - name: Gerar ícones do app (se logo enviada)
+        if: ${{ inputs.enviou_logo == 'sim' }}
+        run: |
+          if [ -f logo.png ]; then
+            echo "Gerando ícones a partir de logo.png..."
+            sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
+            
+            mkdir -p android/app/src/main/res/mipmap-mdpi
+            mkdir -p android/app/src/main/res/mipmap-hdpi
+            mkdir -p android/app/src/main/res/mipmap-xhdpi
+            mkdir -p android/app/src/main/res/mipmap-xxhdpi
+            mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+            
+            convert logo.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+            convert logo.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+            convert logo.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+            convert logo.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+            convert logo.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+            
+            # Ícones redondos
+            convert logo.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+            convert logo.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+            convert logo.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+            convert logo.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+            convert logo.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+            
+            echo "Ícones gerados com sucesso!"
+          else
+            echo "logo.png não encontrado, usando ícones padrão."
+          fi
 
-    - name: Salvar APK Gerado
-      uses: actions/upload-artifact@v4
-      with:
-        name: APK-IPTV-Notificacoes
-        path: android/app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 7
+      - name: Sincronizar Capacitor
+        run: npx cap sync android
+
+      - name: Compilar APK (Debug)
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          
+          echo "=== APKs gerados ==="
+          find . -name "*.apk" -type f
+
+      - name: Mover APK para pasta de saída
+        run: |
+          mkdir -p apk_output
+          APK_FILE=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -1)
+          if [ -f "$APK_FILE" ]; then
+            APP_NAME_CLEAN=$(echo "${{ inputs.app_name }}" | sed 's/[^a-zA-Z0-9_-]/_/g')
+            cp "$APK_FILE" "apk_output/${APP_NAME_CLEAN}.apk"
+            echo "APK movido: apk_output/${APP_NAME_CLEAN}.apk"
+            ls -la apk_output/
+          else
+            echo "ERRO: APK não encontrado!"
+            exit 1
+          fi
+
+      - name: Salvar APK como Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-gerado
+          path: apk_output/*.apk
+          retention-days: 1
