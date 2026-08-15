@@ -1,348 +1,1932 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZapCobrança - Dashboard de Agendamentos</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
-    <style>
-        .active-filter { border: 2px solid #4f46e5 !important; transform: scale(1.02); }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#202024">
+<title>Sistema de Gestão IPTV</title>
+
+<!-- Fontes -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Ícones -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4/fonts/remixicon.css">
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- ECharts -->
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Sora', 'sans-serif'],
+      },
+      colors: {
+        bg: '#202024',
+        card: '#2a2a2f',
+        text: '#e8e5df',
+        muted: '#9a978f',
+        accent: '#c47046',
+        accent2: '#7ba8b8',
+        border: 'rgba(232,229,223,0.12)',
+      }
+    }
+  }
+}
+</script>
+
+<style>
+  :root {
+    --bg: #202024;
+    --card: #2a2a2f;
+    --text: #e8e5df;
+    --muted: #9a978f;
+    --accent: #c47046;
+    --accent-soft: rgba(196,112,70,.14);
+    --accent2: #7ba8b8;
+    --accent2-soft: rgba(123,168,184,.14);
+    --border: rgba(232,229,223,.12);
+  }
+
+  * {
+    font-family: 'Sora', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+  }
+
+  /* Canvas de partículas */
+  #particles-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    z-index: 50;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 40;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Main content */
+  .main-content {
+    margin-left: 260px;
+    min-height: 100vh;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    z-index: 1;
+  }
+
+  .main-content.expanded {
+    margin-left: 0;
+  }
+
+  /* Menu items */
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+  }
+
+  .menu-item:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .menu-item.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+
+  .menu-item i {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+  }
+
+  /* Cards */
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    border-color: var(--accent);
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--accent);
+  }
+
+  .stat-card.accent2::before {
+    background: var(--accent2);
+  }
+
+  /* Botões */
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    background: #b0613a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(196,112,70,0.3);
+  }
+
+  .btn-secondary {
+    background: var(--card);
+    color: var(--text);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 400;
+    transition: all 0.2s ease;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .btn-whatsapp {
+    background: #25D366;
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+  }
+
+  .btn-whatsapp:hover {
+    background: #1ebe57;
+    transform: translateY(-1px);
+  }
+
+  .btn-edit {
+    background: var(--accent2-soft);
+    color: var(--accent2);
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid var(--accent2);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+  }
+
+  .btn-edit:hover {
+    background: var(--accent2);
+    color: #fff;
+  }
+
+  .btn-delete {
+    background: rgba(220, 38, 38, 0.1);
+    color: #ef4444;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid #ef4444;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+  }
+
+  .btn-delete:hover {
+    background: #ef4444;
+    color: #fff;
+  }
+
+  /* Tabela */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table th {
+    text-align: left;
+    padding: 14px 16px;
+    color: var(--muted);
+    font-weight: 500;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--card);
+  }
+
+  .data-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+
+  .data-table tbody tr {
+    transition: background 0.2s ease;
+  }
+
+  .data-table tbody tr:hover {
+    background: var(--card);
+  }
+
+  /* Status badges */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .status-active {
+    background: rgba(37, 211, 102, 0.15);
+    color: #25D366;
+  }
+
+  .status-inactive {
+    background: rgba(156, 163, 175, 0.15);
+    color: #9ca3af;
+  }
+
+  .status-pending {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+  }
+
+  .status-expired {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+  }
+
+  /* Modal */
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    padding: 20px;
+  }
+
+  .modal.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.95) translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .modal.active .modal-content {
+    transform: scale(1) translateY(0);
+  }
+
+  /* Inputs */
+  .form-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+
+  .form-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .form-input::placeholder {
+    color: var(--muted);
+  }
+
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  /* Plano cards */
+  .plano-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .plano-card:hover {
+    transform: translateY(-6px);
+    border-color: var(--accent);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  }
+
+  .plano-card.popular {
+    border-color: var(--accent);
+    transform: scale(1.02);
+  }
+
+  .plano-card.popular::before {
+    content: 'POPULAR';
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  /* Template card */
+  .template-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.2s ease;
+  }
+
+  .template-card:hover {
+    border-color: var(--accent2);
+  }
+
+  /* Seções */
+  .section {
+    display: none;
+    animation: fadeIn 0.4s ease;
+  }
+
+  .section.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Header */
+  .top-header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    backdrop-filter: blur(10px);
+  }
+
+  .menu-toggle {
+    background: transparent;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .menu-toggle:hover {
+    background: var(--bg);
+    color: var(--accent);
+  }
+
+  .menu-toggle i {
+    font-size: 24px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+
+  /* Responsivo */
+  @media (max-width: 1024px) {
+    .sidebar {
+      transform: translateX(-100%);
+    }
+    .sidebar.mobile-open {
+      transform: translateX(0);
+    }
+    .main-content {
+      margin-left: 0;
+    }
+  }
+
+  /* Gradiente texto */
+  .gradient-text {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Switch toggle */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border);
+    transition: .3s;
+    border-radius: 26px;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--text);
+    transition: .3s;
+    border-radius: 50%;
+  }
+
+  input:checked + .slider {
+    background-color: var(--accent);
+  }
+
+  input:checked + .slider:before {
+    transform: translateX(22px);
+  }
+
+  /* Search input */
+  .search-box {
+    position: relative;
+  }
+
+  .search-box i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 18px;
+  }
+
+  .search-box input {
+    padding-left: 42px;
+  }
+
+  /* Logo */
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo-icon {
+    width: 42px;
+    height: 42px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+  }
+</style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans flex h-screen overflow-hidden">
+<body>
 
-    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
-    
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 flex flex-col shadow-xl">
-        <div class="p-5 bg-slate-950 flex items-center justify-between border-b border-slate-800">
-            <div class="flex items-center gap-2 font-bold text-white text-xl">
-                <i class="ph ph-wallet text-indigo-500 text-2xl"></i>
-                <span>ZapGestão</span>
-            </div>
-            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
-        </div>
-        <nav class="flex-1 p-4 space-y-1">
-            <button onclick="definirFiltro('todos')" class="w-full flex items-center gap-3 px-4 py-3 bg-indigo-600 text-white rounded-xl shadow-lg shadow-indigo-600/20 text-left font-medium"><i class="ph ph-squares-four text-xl"></i> Dashboard</button>
-            <button onclick="toggleModal('modalNovo')" class="w-full flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl text-left font-medium"><i class="ph ph-plus-circle text-xl"></i> Nova Venda/Item</button>
-        </nav>
-        <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">v1.0 - 100% Funcional</div>
-    </aside>
+<!-- Canvas de Partículas -->
+<canvas id="particles-canvas"></canvas>
 
-    <main class="flex-1 flex flex-col h-screen overflow-hidden">
-        
-        <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-sm">
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="md:hidden text-slate-600"><i class="ph ph-list text-2xl"></i></button>
-                <h1 class="text-xl font-bold text-slate-800">Painel Financeiro</h1>
-            </div>
-            <button onclick="toggleModal('modalNovo')" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md flex items-center gap-2 transition-all">
-                <i class="ph ph-plus text-bold"></i> Lançar Item
-            </button>
-        </header>
+<!-- Sidebar Overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-        <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-            
-            <div id="filtro-aviso" class="hidden bg-indigo-50 text-indigo-700 px-4 py-2 rounded-xl text-sm flex justify-between items-center">
-                <span>Filtrando tabela por: <strong id="filtro-nome">Status</strong></span>
-                <button onclick="definirFiltro('todos')" class="underline font-bold">Ver Todos</button>
-            </div>
-
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                
-                <div onclick="definirFiltro('todos')" id="card-filtro-todos" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-indigo-400 transition-all flex flex-col justify-between active-filter">
-                    <span class="text-xs font-semibold text-slate-400 uppercase">Todos os Itens</span>
-                    <h3 class="text-xl md:text-2xl font-bold mt-2" id="db-todos">R$ 0,00</h3>
-                    <span class="text-[10px] text-indigo-600 font-medium mt-1">Clique para ver todos</span>
-                </div>
-
-                <div onclick="definirFiltro('pago')" id="card-filtro-pago" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-emerald-400 transition-all flex flex-col justify-between">
-                    <span class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1">Já Recebidos <div class="w-2 h-2 bg-emerald-500 rounded-full"></div></span>
-                    <h3 class="text-xl md:text-2xl font-bold text-emerald-600 mt-2" id="db-pagos">R$ 0,00</h3>
-                    <span class="text-[10px] text-emerald-600 font-medium mt-1">Clique para filtrar</span>
-                </div>
-
-                <div onclick="definirFiltro('hoje')" id="card-filtro-hoje" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-amber-400 transition-all flex flex-col justify-between">
-                    <span class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1">Vencendo Hoje <div class="w-2 h-2 bg-amber-500 rounded-full animate-ping"></div></span>
-                    <h3 class="text-xl md:text-2xl font-bold text-amber-600 mt-2" id="db-hoje">R$ 0,00</h3>
-                    <span class="text-[10px] text-amber-600 font-medium mt-1">Atenção imediata</span>
-                </div>
-
-                <div onclick="definirFiltro('atrasado')" id="card-filtro-atrasado" class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 cursor-pointer hover:border-rose-400 transition-all flex flex-col justify-between">
-                    <span class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1">Em Atraso <div class="w-2 h-2 bg-rose-500 rounded-full"></div></span>
-                    <h3 class="text-xl md:text-2xl font-bold text-rose-600 mt-2" id="db-atrasados">R$ 0,00</h3>
-                    <span class="text-[10px] text-rose-600 font-medium mt-1">Inadimplentes</span>
-                </div>
-
-            </div>
-
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50 font-bold text-slate-700 text-sm">
-                    Lançamentos Detalhados
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse whitespace-nowrap">
-                        <thead>
-                            <tr class="bg-slate-100/70 text-slate-500 text-[11px] uppercase font-bold border-b border-slate-200">
-                                <th class="px-4 py-3">Cliente</th>
-                                <th class="px-4 py-3">O que comprou?</th>
-                                <th class="px-4 py-3">Vencimento</th>
-                                <th class="px-4 py-3">Valor</th>
-                                <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3 text-center">Ações / Cobrança</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-itens" class="divide-y divide-slate-100 text-sm">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    </main>
-
-    <div id="modalNovo" class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-xs">
-        <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h2 class="text-lg font-bold text-slate-800">Cadastrar Nova Venda</h2>
-                <button onclick="toggleModal('modalNovo')" class="text-slate-400 hover:text-slate-600"><i class="ph ph-x text-xl"></i></button>
-            </div>
-
-            <form id="formVenda" onsubmit="salvarNovaVenda(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nome do Cliente</label>
-                    <input type="text" id="addNome" required placeholder="Ex: João da Silva" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">WhatsApp do Cliente (Com DDD)</label>
-                    <input type="tel" id="addWhats" required placeholder="Ex: 11999998888" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">O que foi vendido?</label>
-                    <input type="text" id="addProduto" required placeholder="Ex: Camiseta preta, Serviço X" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Valor (R$)</label>
-                        <input type="number" id="addValor" step="0.01" required placeholder="0.00" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Data de Vencimento</label>
-                        <input type="date" id="addData" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Barra de Observação</label>
-                    <textarea id="addObs" placeholder="Algum detalhe ou prazo extra..." rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"></textarea>
-                </div>
-
-                <div class="pt-2 flex gap-2 justify-end text-sm">
-                    <button type="button" onclick="toggleModal('modalNovo')" class="px-4 py-2 bg-slate-100 font-medium rounded-xl text-slate-600">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 font-semibold text-white rounded-xl shadow-md">Salvar Item</button>
-                </div>
-            </form>
-        </div>
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo">
+    <div class="logo-icon">IP</div>
+    <div>
+      <h1 class="font-bold text-lg">Gestão IPTV</h1>
+      <p class="text-xs text-muted">Sistema de Cobrança</p>
     </div>
+  </div>
 
-    <script>
-        // Carrega dados iniciais do LocalStorage ou inicia vazio se for o primeiro acesso
-        let bdVendas = JSON.parse(localStorage.getItem('zap_vendas')) || [
-            { id: 1, cliente: "Carlos Alberto", whats: "5511999998888", produto: "Tênis Esportivo", valor: 350.00, data: "2026-05-20", obs: "Pagamento via Pix", pago: false },
-            { id: 2, cliente: "Juliana Costa", whats: "5511988887777", produto: "Manutenção Estética", valor: 180.00, data: new Date().toISOString().split('T')[0], obs: "Retorno mensal", pago: false },
-            { id: 3, cliente: "Marcos Lima", whats: "5521977776666", produto: "Smartphone Usado", valor: 1200.00, data: "2026-06-10", obs: "Parcela única", pago: true }
-        ];
+  <nav class="py-4">
+    <div class="menu-item active" data-section="dashboard">
+      <i class="ri-dashboard-line"></i>
+      <span>Dashboard</span>
+    </div>
+    <div class="menu-item" data-section="clientes">
+      <i class="ri-user-line"></i>
+      <span>Clientes</span>
+    </div>
+    <div class="menu-item" data-section="planos">
+      <i class="ri-price-tag-3-line"></i>
+      <span>Planos</span>
+    </div>
+    <div class="menu-item" data-section="templates">
+      <i class="ri-message-3-line"></i>
+      <span>Templates</span>
+    </div>
+    <div class="menu-item" data-section="configuracoes">
+      <i class="ri-settings-3-line"></i>
+      <span>Configurações</span>
+    </div>
+  </nav>
 
-        let filtroAtual = 'todos';
+  <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-[var(--border)]">
+    <div class="flex items-center gap-3 p-3 rounded-xl hover:bg-[var(--bg)] cursor-pointer transition">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent2)] flex items-center justify-center font-bold">
+        A
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-medium text-sm truncate">Administrador</p>
+        <p class="text-xs text-muted truncate">admin@gestaoiptv.com</p>
+      </div>
+      <i class="ri-logout-box-r-line text-muted"></i>
+    </div>
+  </div>
+</aside>
 
-        // Salvar dados no LocalStorage do celular/computador
-        function salvarNoLocalStorage() {
-            localStorage.setItem('zap_vendas', JSON.stringify(bdVendas));
+<!-- Main Content -->
+<main class="main-content" id="mainContent">
+  <!-- Header -->
+  <header class="top-header">
+    <div class="flex items-center gap-4">
+      <button class="menu-toggle" id="menuToggle">
+        <i class="ri-menu-line"></i>
+      </button>
+      <div>
+        <h2 class="font-semibold text-lg" id="pageTitle">Dashboard</h2>
+        <p class="text-xs text-muted" id="pageSubtitle">Visão geral do seu negócio</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <button class="btn-secondary">
+        <i class="ri-notification-3-line"></i>
+      </button>
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent2)] flex items-center justify-center font-bold cursor-pointer">
+        A
+      </div>
+    </div>
+  </header>
+
+  <div class="p-6">
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <section class="section active" id="section-dashboard">
+      <!-- Cards de Estatísticas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-muted text-sm">Total de Clientes</span>
+            <div class="w-10 h-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center">
+              <i class="ri-user-line text-[var(--accent)] text-xl"></i>
+            </div>
+          </div>
+          <p class="text-3xl font-bold" id="statClientes">0</p>
+          <p class="text-xs text-green-400 mt-2"><i class="ri-arrow-up-line"></i> +12% este mês</p>
+        </div>
+
+        <div class="stat-card accent2">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-muted text-sm">Clientes Ativos</span>
+            <div class="w-10 h-10 rounded-xl bg-[var(--accent2-soft)] flex items-center justify-center">
+              <i class="ri-user-check-line text-[var(--accent2)] text-xl"></i>
+            </div>
+          </div>
+          <p class="text-3xl font-bold" id="statAtivos">0</p>
+          <p class="text-xs text-green-400 mt-2"><i class="ri-arrow-up-line"></i> +8% este mês</p>
+        </div>
+
+        <div class="stat-card">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-muted text-sm">Receita Mensal</span>
+            <div class="w-10 h-10 rounded-xl bg-[var(--accent-soft)] flex items-center justify-center">
+              <i class="ri-money-dollar-circle-line text-[var(--accent)] text-xl"></i>
+            </div>
+          </div>
+          <p class="text-3xl font-bold" id="statReceita">R$ 0,00</p>
+          <p class="text-xs text-green-400 mt-2"><i class="ri-arrow-up-line"></i> +23% este mês</p>
+        </div>
+
+        <div class="stat-card accent2">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-muted text-sm">Pagamentos Pendentes</span>
+            <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+              <i class="ri-alarm-warning-line text-red-400 text-xl"></i>
+            </div>
+          </div>
+          <p class="text-3xl font-bold" id="statPendentes">0</p>
+          <p class="text-xs text-red-400 mt-2"><i class="ri-arrow-down-line"></i> -3% este mês</p>
+        </div>
+      </div>
+
+      <!-- Gráficos -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
+        <div class="lg:col-span-2 bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-semibold text-lg">Receita Mensal</h3>
+              <p class="text-sm text-muted">Últimos 6 meses</p>
+            </div>
+            <select class="form-input w-auto text-sm py-2 px-3">
+              <option>2026</option>
+              <option>2025</option>
+            </select>
+          </div>
+          <div id="chartReceita" style="height: 320px;"></div>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
+          <h3 class="font-semibold text-lg mb-1">Status de Clientes</h3>
+          <p class="text-sm text-muted mb-4">Distribuição atual</p>
+          <div id="chartStatus" style="height: 320px;"></div>
+        </div>
+      </div>
+
+      <!-- Tabela e Gráfico de Planos -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
+          <h3 class="font-semibold text-lg mb-1">Planos Mais Vendidos</h3>
+          <p class="text-sm text-muted mb-4">Distribuição por plano</p>
+          <div id="chartPlanos" style="height: 300px;"></div>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-semibold text-lg">Próximos Vencimentos</h3>
+              <p class="text-sm text-muted">Clientes com vencimento em até 7 dias</p>
+            </div>
+          </div>
+          <div class="space-y-3" id="listaVencimentos">
+            <!-- Preenchido por JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CLIENTES ==================== -->
+    <section class="section" id="section-clientes">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div class="search-box w-full md:w-80">
+          <i class="ri-search-line"></i>
+          <input type="text" class="form-input" placeholder="Buscar cliente..." id="searchCliente">
+        </div>
+        <button class="btn-primary" onclick="abrirModalCliente()">
+          <i class="ri-add-line"></i>
+          Novo Cliente
+        </button>
+      </div>
+
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>WhatsApp</th>
+                <th>Plano</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tabelaClientes">
+              <!-- Preenchido por JS -->
+            </tbody>
+          </table>
+        </div>
+        <div id="emptyClientes" class="hidden p-12 text-center">
+          <i class="ri-user-line text-5xl text-muted mb-4"></i>
+          <p class="text-muted">Nenhum cliente cadastrado ainda</p>
+          <button class="btn-primary mt-4" onclick="abrirModalCliente()">
+            <i class="ri-add-line"></i>
+            Cadastrar primeiro cliente
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PLANOS ==================== -->
+    <section class="section" id="section-planos">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="text-xl font-semibold">Planos Disponíveis</h3>
+          <p class="text-sm text-muted">Gerencie os planos oferecidos aos seus clientes</p>
+        </div>
+        <button class="btn-primary" onclick="abrirModalPlano()">
+          <i class="ri-add-line"></i>
+          Novo Plano
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="listaPlanos">
+        <!-- Preenchido por JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TEMPLATES ==================== -->
+    <section class="section" id="section-templates">
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <h3 class="text-xl font-semibold">Templates de Mensagem</h3>
+          <p class="text-sm text-muted">Modelos prontos para enviar via WhatsApp</p>
+        </div>
+        <button class="btn-primary" onclick="abrirModalTemplate()">
+          <i class="ri-add-line"></i>
+          Novo Template
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="listaTemplates">
+        <!-- Preenchido por JS -->
+      </div>
+    </section>
+
+    <!-- ==================== CONFIGURAÇÕES ==================== -->
+    <section class="section" id="section-configuracoes">
+      <div class="max-w-3xl">
+        <h3 class="text-xl font-semibold mb-6">Configurações do Sistema</h3>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 mb-5">
+          <h4 class="font-semibold mb-4 flex items-center gap-2">
+            <i class="ri-building-line text-[var(--accent)]"></i>
+            Dados da Empresa
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">Nome da Empresa</label>
+              <input type="text" class="form-input" value="Gestão IPTV Premium">
+            </div>
+            <div>
+              <label class="form-label">CNPJ</label>
+              <input type="text" class="form-input" value="00.000.000/0001-00">
+            </div>
+            <div>
+              <label class="form-label">E-mail</label>
+              <input type="email" class="form-input" value="contato@gestaoiptv.com">
+            </div>
+            <div>
+              <label class="form-label">Telefone</label>
+              <input type="text" class="form-input" value="(00) 00000-0000">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 mb-5">
+          <h4 class="font-semibold mb-4 flex items-center gap-2">
+            <i class="ri-whatsapp-line text-green-400"></i>
+            Integração WhatsApp
+          </h4>
+          <div class="space-y-4">
+            <div class="flex items-center justify-between p-4 bg-[var(--bg)] rounded-xl">
+              <div>
+                <p class="font-medium">Notificações de Vencimento</p>
+                <p class="text-sm text-muted">Enviar lembrete 3 dias antes do vencimento</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="flex items-center justify-between p-4 bg-[var(--bg)] rounded-xl">
+              <div>
+                <p class="font-medium">Confirmação de Pagamento</p>
+                <p class="text-sm text-muted">Enviar mensagem ao confirmar pagamento</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="flex items-center justify-between p-4 bg-[var(--bg)] rounded-xl">
+              <div>
+                <p class="font-medium">Aviso de Bloqueio</p>
+                <p class="text-sm text-muted">Avisar cliente antes do bloqueio</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[var(--card)] border border-[var(--border)] rounded-2xl p-6 mb-5">
+          <h4 class="font-semibold mb-4 flex items-center gap-2">
+            <i class="ri-palette-line text-[var(--accent2)]"></i>
+            Aparência
+          </h4>
+          <div class="flex items-center justify-between p-4 bg-[var(--bg)] rounded-xl">
+            <div>
+              <p class="font-medium">Efeito de Partículas</p>
+              <p class="text-sm text-muted">Animação de fundo da interface</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="toggleParticles">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <button class="btn-primary w-full justify-center py-3">
+          <i class="ri-save-line"></i>
+          Salvar Configurações
+        </button>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- Modal Cliente -->
+<div class="modal" id="modalCliente">
+  <div class="modal-content">
+    <div class="p-6 border-b border-[var(--border)] flex items-center justify-between">
+      <h3 class="font-semibold text-lg" id="modalClienteTitulo">Novo Cliente</h3>
+      <button onclick="fecharModalCliente()" class="text-muted hover:text-[var(--text)] transition">
+        <i class="ri-close-line text-2xl"></i>
+      </button>
+    </div>
+    <form id="formCliente" class="p-6 space-y-4">
+      <input type="hidden" id="clienteId">
+      <div>
+        <label class="form-label">Nome Completo *</label>
+        <input type="text" class="form-input" id="clienteNome" required placeholder="Digite o nome do cliente">
+      </div>
+      <div>
+        <label class="form-label">WhatsApp *</label>
+        <input type="tel" class="form-input" id="clienteWhatsapp" required placeholder="(00) 00000-0000">
+      </div>
+      <div>
+        <label class="form-label">E-mail</label>
+        <input type="email" class="form-input" id="clienteEmail" placeholder="cliente@email.com">
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Plano *</label>
+          <select class="form-input" id="clientePlano" required>
+            <!-- Preenchido por JS -->
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Vencimento *</label>
+          <input type="date" class="form-input" id="clienteVencimento" required>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Status</label>
+        <select class="form-input" id="clienteStatus">
+          <option value="active">Ativo</option>
+          <option value="pending">Pendente</option>
+          <option value="expired">Vencido</option>
+          <option value="inactive">Inativo</option>
+        </select>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="fecharModalCliente()" class="btn-secondary flex-1 justify-center">Cancelar</button>
+        <button type="submit" class="btn-primary flex-1 justify-center">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Plano -->
+<div class="modal" id="modalPlano">
+  <div class="modal-content">
+    <div class="p-6 border-b border-[var(--border)] flex items-center justify-between">
+      <h3 class="font-semibold text-lg">Novo Plano</h3>
+      <button onclick="fecharModalPlano()" class="text-muted hover:text-[var(--text)] transition">
+        <i class="ri-close-line text-2xl"></i>
+      </button>
+    </div>
+    <form id="formPlano" class="p-6 space-y-4">
+      <div>
+        <label class="form-label">Nome do Plano *</label>
+        <input type="text" class="form-input" id="planoNome" required placeholder="Ex: Básico, Premium, Família">
+      </div>
+      <div>
+        <label class="form-label">Preço Mensal (R$) *</label>
+        <input type="number" step="0.01" class="form-input" id="planoPreco" required placeholder="0,00">
+      </div>
+      <div>
+        <label class="form-label">Descrição / Benefícios</label>
+        <textarea class="form-input" id="planoDescricao" rows="3" placeholder="Um benefício por linha..."></textarea>
+      </div>
+      <div class="flex items-center gap-3">
+        <label class="switch">
+          <input type="checkbox" id="planoPopular">
+          <span class="slider"></span>
+        </label>
+        <span class="text-sm">Marcar como plano popular</span>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="fecharModalPlano()" class="btn-secondary flex-1 justify-center">Cancelar</button>
+        <button type="submit" class="btn-primary flex-1 justify-center">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Template -->
+<div class="modal" id="modalTemplate">
+  <div class="modal-content">
+    <div class="p-6 border-b border-[var(--border)] flex items-center justify-between">
+      <h3 class="font-semibold text-lg">Novo Template</h3>
+      <button onclick="fecharModalTemplate()" class="text-muted hover:text-[var(--text)] transition">
+        <i class="ri-close-line text-2xl"></i>
+      </button>
+    </div>
+    <form id="formTemplate" class="p-6 space-y-4">
+      <div>
+        <label class="form-label">Título *</label>
+        <input type="text" class="form-input" id="templateTitulo" required placeholder="Ex: Lembrete de Vencimento">
+      </div>
+      <div>
+        <label class="form-label">Categoria</label>
+        <select class="form-input" id="templateCategoria">
+          <option value="cobranca">Cobrança</option>
+          <option value="avisos">Avisos</option>
+          <option value="promocoes">Promoções</option>
+          <option value="boasvindas">Boas-vindas</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Mensagem *</label>
+        <textarea class="form-input" id="templateMensagem" rows="5" required placeholder="Use {nome} para o nome do cliente, {plano} para o plano, {vencimento} para o vencimento..."></textarea>
+      </div>
+      <div class="flex gap-3 pt-4">
+        <button type="button" onclick="fecharModalTemplate()" class="btn-secondary flex-1 justify-center">Cancelar</button>
+        <button type="submit" class="btn-primary flex-1 justify-center">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ============================================
+// PARTICULAS
+// ============================================
+(function() {
+  const canvas = document.getElementById('particles-canvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animationId;
+  let enabled = true;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createParticles() {
+    particles = [];
+    const count = Math.min(60, Math.floor((canvas.width * canvas.height) / 25000));
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 2 + 1,
+        speedX: (Math.random() - 0.5) * 0.3,
+        speedY: (Math.random() - 0.5) * 0.3,
+        opacity: Math.random() * 0.3 + 0.1
+      });
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    particles.forEach((p, i) => {
+      p.x += p.speedX;
+      p.y += p.speedY;
+
+      if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+      if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(196, 112, 70, ${p.opacity})`;
+      ctx.fill();
+
+      // Linhas entre partículas próximas
+      particles.slice(i + 1).forEach(p2 => {
+        const dx = p.x - p2.x;
+        const dy = p.y - p2.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(p2.x, p2.y);
+          ctx.strokeStyle = `rgba(123, 168, 184, ${0.08 * (1 - dist / 120)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
         }
+      });
+    });
 
-        // Formatações Visuais
-        const formatarGrana = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-        const formatarDataBR = (d) => d.split('-').reverse().join('/');
+    if (enabled) {
+      animationId = requestAnimationFrame(draw);
+    }
+  }
 
-        // Controlar visibilidade de janelas
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('overlay').classList.toggle('hidden');
+  resize();
+  createParticles();
+  draw();
+
+  window.addEventListener('resize', () => {
+    resize();
+    createParticles();
+  });
+
+  // Toggle partículas
+  document.getElementById('toggleParticles').addEventListener('change', function() {
+    enabled = this.checked;
+    if (enabled) draw();
+    else cancelAnimationFrame(animationId);
+  });
+})();
+
+// ============================================
+// DADOS INICIAIS
+// ============================================
+const STORAGE_KEY = 'gestao_iptv_data';
+
+let dados = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
+  clientes: [
+    { id: 1, nome: 'João Silva', whatsapp: '73999991111', email: 'joao@email.com', plano: 'Premium', vencimento: '2026-08-20', status: 'active' },
+    { id: 2, nome: 'Maria Santos', whatsapp: '73988882222', email: 'maria@email.com', plano: 'Básico', vencimento: '2026-08-18', status: 'pending' },
+    { id: 3, nome: 'Pedro Costa', whatsapp: '73977773333', email: 'pedro@email.com', plano: 'Família', vencimento: '2026-08-25', status: 'active' },
+    { id: 4, nome: 'Ana Oliveira', whatsapp: '73966664444', email: 'ana@email.com', plano: 'Premium', vencimento: '2026-08-10', status: 'expired' },
+    { id: 5, nome: 'Carlos Lima', whatsapp: '73955555555', email: 'carlos@email.com', plano: 'Básico', vencimento: '2026-08-22', status: 'active' },
+  ],
+  planos: [
+    { id: 1, nome: 'Básico', preco: 29.90, descricao: 'Canais SD\nAcesso básico', popular: false },
+    { id: 2, nome: 'Premium', preco: 49.90, descricao: 'Canais HD e SD\nFilmes e Séries\nEsportes', popular: true },
+    { id: 3, nome: 'Família', preco: 79.90, descricao: 'Todos os canais\n4 Telas simultâneas\nConteúdo adulto opcional', popular: false },
+  ],
+  templates: [
+    { id: 1, titulo: 'Lembrete de Vencimento', categoria: 'cobranca', mensagem: 'Olá {nome}! Tudo bem? 😊\n\nEstamos passando para lembrá-lo que o vencimento do seu plano {plano} é dia {vencimento}.\n\nPara não ficar sem acesso, efetue o pagamento o quanto antes.\n\nQualquer dúvida, estamos à disposição!' },
+    { id: 2, titulo: 'Confirmação de Pagamento', categoria: 'avisos', mensagem: 'Olá {nome}! 🎉\n\nRecebemos o pagamento do seu plano {plano}. Obrigado pela confiança!\n\nSeu acesso está garantido até o próximo vencimento.\n\nAtenciosamente, Equipe Gestão IPTV' },
+    { id: 3, titulo: 'Boas-vindas', categoria: 'boasvindas', mensagem: 'Olá {nome}! Seja muito bem-vindo(a)! 🚀\n\nSeu plano {plano} já está ativo. Aproveite todo o conteúdo disponível!\n\nQualquer dúvida, é só chamar.' },
+    { id: 4, titulo: 'Promoção Especial', categoria: 'promocoes', mensagem: 'Olá {nome}! 🔥\n\nTemos uma promoção exclusiva para você!\n\nRenove seu plano {plano} e ganhe 15% de desconto.\n\nCorra, oferta por tempo limitado!' },
+  ]
+};
+
+function salvarDados() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(dados));
+}
+
+// ============================================
+// NAVEGAÇÃO
+// ============================================
+const menuItems = document.querySelectorAll('.menu-item');
+const sections = document.querySelectorAll('.section');
+const pageTitle = document.getElementById('pageTitle');
+const pageSubtitle = document.getElementById('pageSubtitle');
+
+const titles = {
+  dashboard: { title: 'Dashboard', subtitle: 'Visão geral do seu negócio' },
+  clientes: { title: 'Clientes', subtitle: 'Gerencie todos os seus clientes' },
+  planos: { title: 'Planos', subtitle: 'Planos e valores oferecidos' },
+  templates: { title: 'Templates', subtitle: 'Modelos de mensagens WhatsApp' },
+  configuracoes: { title: 'Configurações', subtitle: 'Ajustes do sistema' }
+};
+
+menuItems.forEach(item => {
+  item.addEventListener('click', () => {
+    const sectionId = item.dataset.section;
+    
+    menuItems.forEach(m => m.classList.remove('active'));
+    item.classList.add('active');
+    
+    sections.forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + sectionId).classList.add('active');
+    
+    pageTitle.textContent = titles[sectionId].title;
+    pageSubtitle.textContent = titles[sectionId].subtitle;
+    
+    // Fechar sidebar no mobile
+    document.getElementById('sidebar').classList.remove('mobile-open');
+    document.getElementById('sidebarOverlay').classList.remove('active');
+    
+    // Atualizar dados específicos
+    if (sectionId === 'dashboard') initDashboard();
+    if (sectionId === 'clientes') renderizarClientes();
+    if (sectionId === 'planos') renderizarPlanos();
+    if (sectionId === 'templates') renderizarTemplates();
+  });
+});
+
+// Menu toggle
+const sidebar = document.getElementById('sidebar');
+const mainContent = document.getElementById('mainContent');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+document.getElementById('menuToggle').addEventListener('click', () => {
+  if (window.innerWidth <= 1024) {
+    sidebar.classList.toggle('mobile-open');
+    sidebarOverlay.classList.toggle('active');
+  } else {
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('expanded');
+  }
+});
+
+sidebarOverlay.addEventListener('click', () => {
+  sidebar.classList.remove('mobile-open');
+  sidebarOverlay.classList.remove('active');
+});
+
+// ============================================
+// CLIENTES
+// ============================================
+function renderizarClientes() {
+  const tbody = document.getElementById('tabelaClientes');
+  const empty = document.getElementById('emptyClientes');
+  const search = document.getElementById('searchCliente').value.toLowerCase();
+  
+  const filtrados = dados.clientes.filter(c => 
+    c.nome.toLowerCase().includes(search) || 
+    c.whatsapp.includes(search)
+  );
+  
+  if (filtrados.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  
+  empty.classList.add('hidden');
+  
+  tbody.innerHTML = filtrados.map(cliente => {
+    const statusLabels = {
+      active: { text: 'Ativo', class: 'status-active' },
+      inactive: { text: 'Inativo', class: 'status-inactive' },
+      pending: { text: 'Pendente', class: 'status-pending' },
+      expired: { text: 'Vencido', class: 'status-expired' }
+    };
+    const status = statusLabels[cliente.status] || statusLabels.inactive;
+    
+    const dataVenc = new Date(cliente.vencimento + 'T00:00:00');
+    const dataFormatada = dataVenc.toLocaleDateString('pt-BR');
+    
+    return `
+      <tr>
+        <td>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent2)] flex items-center justify-center font-bold text-sm">
+              ${cliente.nome.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p class="font-medium">${cliente.nome}</p>
+              <p class="text-xs text-muted">${cliente.email || 'Sem e-mail'}</p>
+            </div>
+          </div>
+        </td>
+        <td>${formatarWhatsApp(cliente.whatsapp)}</td>
+        <td>${cliente.plano}</td>
+        <td>${dataFormatada}</td>
+        <td><span class="status-badge ${status.class}">${status.text}</span></td>
+        <td>
+          <div class="flex gap-2 flex-wrap">
+            <button class="btn-whatsapp" onclick="abrirWhatsApp(${cliente.id})" title="Abrir WhatsApp">
+              <i class="ri-whatsapp-line"></i>
+            </button>
+            <button class="btn-edit" onclick="editarCliente(${cliente.id})" title="Editar">
+              <i class="ri-pencil-line"></i>
+            </button>
+            <button class="btn-delete" onclick="excluirCliente(${cliente.id})" title="Excluir">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+document.getElementById('searchCliente').addEventListener('input', renderizarClientes);
+
+function formatarWhatsApp(num) {
+  const n = num.replace(/\D/g, '');
+  if (n.length === 11) return `(${n.slice(0,2)}) ${n.slice(2,7)}-${n.slice(7)}`;
+  if (n.length === 10) return `(${n.slice(0,2)}) ${n.slice(2,6)}-${n.slice(6)}`;
+  return num;
+}
+
+function abrirWhatsApp(id) {
+  const cliente = dados.clientes.find(c => c.id === id);
+  if (!cliente) return;
+  
+  const numero = cliente.whatsapp.replace(/\D/g, '');
+  const mensagem = `Olá ${cliente.nome}! Tudo bem? 😊\n\nEstamos entrando em contato sobre o seu plano ${cliente.plano}.\n\nQualquer dúvida, estamos à disposição!`;
+  
+  const url = `https://wa.me/55${numero}?text=${encodeURIComponent(mensagem)}`;
+  window.open(url, '_blank');
+}
+
+function abrirModalCliente(cliente = null) {
+  document.getElementById('modalClienteTitulo').textContent = cliente ? 'Editar Cliente' : 'Novo Cliente';
+  document.getElementById('formCliente').reset();
+  
+  // Preencher select de planos
+  const select = document.getElementById('clientePlano');
+  select.innerHTML = dados.planos.map(p => `<option value="${p.nome}">${p.nome} - R$ ${p.preco.toFixed(2)}</option>`).join('');
+  
+  if (cliente) {
+    document.getElementById('clienteId').value = cliente.id;
+    document.getElementById('clienteNome').value = cliente.nome;
+    document.getElementById('clienteWhatsapp').value = cliente.whatsapp;
+    document.getElementById('clienteEmail').value = cliente.email || '';
+    document.getElementById('clientePlano').value = cliente.plano;
+    document.getElementById('clienteVencimento').value = cliente.vencimento;
+    document.getElementById('clienteStatus').value = cliente.status;
+  } else {
+    document.getElementById('clienteId').value = '';
+    // Data padrão: daqui a 30 dias
+    const hoje = new Date();
+    hoje.setDate(hoje.getDate() + 30);
+    document.getElementById('clienteVencimento').value = hoje.toISOString().split('T')[0];
+  }
+  
+  document.getElementById('modalCliente').classList.add('active');
+}
+
+function fecharModalCliente() {
+  document.getElementById('modalCliente').classList.remove('active');
+}
+
+function editarCliente(id) {
+  const cliente = dados.clientes.find(c => c.id === id);
+  if (cliente) abrirModalCliente(cliente);
+}
+
+function excluirCliente(id) {
+  if (confirm('Tem certeza que deseja excluir este cliente?')) {
+    dados.clientes = dados.clientes.filter(c => c.id !== id);
+    salvarDados();
+    renderizarClientes();
+    initDashboard();
+  }
+}
+
+document.getElementById('formCliente').addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const id = document.getElementById('clienteId').value;
+  const clienteData = {
+    nome: document.getElementById('clienteNome').value,
+    whatsapp: document.getElementById('clienteWhatsapp').value.replace(/\D/g, ''),
+    email: document.getElementById('clienteEmail').value,
+    plano: document.getElementById('clientePlano').value,
+    vencimento: document.getElementById('clienteVencimento').value,
+    status: document.getElementById('clienteStatus').value
+  };
+  
+  if (id) {
+    // Editar
+    const idx = dados.clientes.findIndex(c => c.id === parseInt(id));
+    if (idx !== -1) {
+      dados.clientes[idx] = { ...dados.clientes[idx], ...clienteData };
+    }
+  } else {
+    // Novo
+    const novoId = dados.clientes.length > 0 ? Math.max(...dados.clientes.map(c => c.id)) + 1 : 1;
+    dados.clientes.push({ id: novoId, ...clienteData });
+  }
+  
+  salvarDados();
+  fecharModalCliente();
+  renderizarClientes();
+  initDashboard();
+});
+
+// ============================================
+// PLANOS
+// ============================================
+function renderizarPlanos() {
+  const container = document.getElementById('listaPlanos');
+  
+  container.innerHTML = dados.planos.map(plano => {
+    const beneficios = plano.descricao ? plano.descricao.split('\n').filter(b => b.trim()) : [];
+    
+    return `
+      <div class="plano-card ${plano.popular ? 'popular' : ''}">
+        <h4 class="text-xl font-bold mb-2">${plano.nome}</h4>
+        <div class="mb-4">
+          <span class="text-3xl font-bold gradient-text">R$ ${plano.preco.toFixed(2)}</span>
+          <span class="text-muted text-sm">/mês</span>
+        </div>
+        <ul class="space-y-2 mb-6">
+          ${beneficios.map(b => `
+            <li class="flex items-start gap-2 text-sm">
+              <i class="ri-check-line text-green-400 mt-0.5"></i>
+              <span>${b}</span>
+            </li>
+          `).join('')}
+        </ul>
+        <div class="flex gap-2">
+          <button class="btn-secondary flex-1 justify-center" onclick="editarPlano(${plano.id})">
+            <i class="ri-pencil-line"></i> Editar
+          </button>
+          <button class="btn-delete" onclick="excluirPlano(${plano.id})">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function abrirModalPlano() {
+  document.getElementById('formPlano').reset();
+  document.getElementById('modalPlano').classList.add('active');
+}
+
+function fecharModalPlano() {
+  document.getElementById('modalPlano').classList.remove('active');
+}
+
+function editarPlano(id) {
+  const plano = dados.planos.find(p => p.id === id);
+  if (!plano) return;
+  
+  document.getElementById('planoNome').value = plano.nome;
+  document.getElementById('planoPreco').value = plano.preco;
+  document.getElementById('planoDescricao').value = plano.descricao || '';
+  document.getElementById('planoPopular').checked = plano.popular || false;
+  
+  // Guardar ID no form
+  document.getElementById('formPlano').dataset.editId = id;
+  document.getElementById('modalPlano').classList.add('active');
+}
+
+function excluirPlano(id) {
+  if (confirm('Tem certeza que deseja excluir este plano?')) {
+    dados.planos = dados.planos.filter(p => p.id !== id);
+    salvarDados();
+    renderizarPlanos();
+  }
+}
+
+document.getElementById('formPlano').addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const editId = document.getElementById('formPlano').dataset.editId;
+  const planoData = {
+    nome: document.getElementById('planoNome').value,
+    preco: parseFloat(document.getElementById('planoPreco').value),
+    descricao: document.getElementById('planoDescricao').value,
+    popular: document.getElementById('planoPopular').checked
+  };
+  
+  if (editId) {
+    const idx = dados.planos.findIndex(p => p.id === parseInt(editId));
+    if (idx !== -1) {
+      dados.planos[idx] = { ...dados.planos[idx], ...planoData };
+    }
+    delete document.getElementById('formPlano').dataset.editId;
+  } else {
+    const novoId = dados.planos.length > 0 ? Math.max(...dados.planos.map(p => p.id)) + 1 : 1;
+    dados.planos.push({ id: novoId, ...planoData });
+  }
+  
+  salvarDados();
+  fecharModalPlano();
+  renderizarPlanos();
+});
+
+// ============================================
+// TEMPLATES
+// ============================================
+function renderizarTemplates() {
+  const container = document.getElementById('listaTemplates');
+  
+  const categorias = {
+    cobranca: { label: 'Cobrança', color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    avisos: { label: 'Avisos', color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    promocoes: { label: 'Promoções', color: 'text-green-400', bg: 'bg-green-500/10' },
+    boasvindas: { label: 'Boas-vindas', color: 'text-purple-400', bg: 'bg-purple-500/10' }
+  };
+  
+  container.innerHTML = dados.templates.map(tpl => {
+    const cat = categorias[tpl.categoria] || categorias.avisos;
+    
+    return `
+      <div class="template-card">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h4 class="font-semibold">${tpl.titulo}</h4>
+            <span class="inline-block mt-1 text-xs px-2 py-1 rounded-full ${cat.bg} ${cat.color}">${cat.label}</span>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn-edit" onclick="editarTemplate(${tpl.id})">
+              <i class="ri-pencil-line"></i>
+            </button>
+            <button class="btn-delete" onclick="excluirTemplate(${tpl.id})">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </div>
+        </div>
+        <p class="text-sm text-muted whitespace-pre-wrap bg-[var(--bg)] p-3 rounded-lg border border-[var(--border)]">${tpl.mensagem}</p>
+      </div>
+    `;
+  }).join('');
+}
+
+function abrirModalTemplate() {
+  document.getElementById('formTemplate').reset();
+  document.getElementById('modalTemplate').classList.add('active');
+}
+
+function fecharModalTemplate() {
+  document.getElementById('modalTemplate').classList.remove('active');
+}
+
+function editarTemplate(id) {
+  const tpl = dados.templates.find(t => t.id === id);
+  if (!tpl) return;
+  
+  document.getElementById('templateTitulo').value = tpl.titulo;
+  document.getElementById('templateCategoria').value = tpl.categoria;
+  document.getElementById('templateMensagem').value = tpl.mensagem;
+  
+  document.getElementById('formTemplate').dataset.editId = id;
+  document.getElementById('modalTemplate').classList.add('active');
+}
+
+function excluirTemplate(id) {
+  if (confirm('Tem certeza que deseja excluir este template?')) {
+    dados.templates = dados.templates.filter(t => t.id !== id);
+    salvarDados();
+    renderizarTemplates();
+  }
+}
+
+document.getElementById('formTemplate').addEventListener('submit', (e) => {
+  e.preventDefault();
+  
+  const editId = document.getElementById('formTemplate').dataset.editId;
+  const tplData = {
+    titulo: document.getElementById('templateTitulo').value,
+    categoria: document.getElementById('templateCategoria').value,
+    mensagem: document.getElementById('templateMensagem').value
+  };
+  
+  if (editId) {
+    const idx = dados.templates.findIndex(t => t.id === parseInt(editId));
+    if (idx !== -1) {
+      dados.templates[idx] = { ...dados.templates[idx], ...tplData };
+    }
+    delete document.getElementById('formTemplate').dataset.editId;
+  } else {
+    const novoId = dados.templates.length > 0 ? Math.max(...dados.templates.map(t => t.id)) + 1 : 1;
+    dados.templates.push({ id: novoId, ...tplData });
+  }
+  
+  salvarDados();
+  fecharModalTemplate();
+  renderizarTemplates();
+});
+
+// ============================================
+// DASHBOARD
+// ============================================
+let chartReceita, chartStatus, chartPlanos;
+
+function initDashboard() {
+  // Estatísticas
+  const totalClientes = dados.clientes.length;
+  const clientesAtivos = dados.clientes.filter(c => c.status === 'active').length;
+  const clientesPendentes = dados.clientes.filter(c => c.status === 'pending' || c.status === 'expired').length;
+  
+  // Calcular receita
+  let receita = 0;
+  dados.clientes.forEach(c => {
+    const plano = dados.planos.find(p => p.nome === c.plano);
+    if (plano && c.status === 'active') receita += plano.preco;
+  });
+  
+  document.getElementById('statClientes').textContent = totalClientes;
+  document.getElementById('statAtivos').textContent = clientesAtivos;
+  document.getElementById('statReceita').textContent = 'R$ ' + receita.toFixed(2).replace('.', ',');
+  document.getElementById('statPendentes').textContent = clientesPendentes;
+  
+  // Gráfico de Receita
+  initChartReceita();
+  
+  // Gráfico de Status
+  initChartStatus();
+  
+  // Gráfico de Planos
+  initChartPlanos();
+  
+  // Lista de vencimentos
+  renderizarVencimentos();
+}
+
+function initChartReceita() {
+  const el = document.getElementById('chartReceita');
+  if (!el) return;
+  
+  if (chartReceita) chartReceita.dispose();
+  chartReceita = echarts.init(el);
+  
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#2a2a2f',
+      borderColor: 'rgba(232,229,223,0.12)',
+      textStyle: { color: '#e8e5df' }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: ['Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago'],
+      axisLine: { lineStyle: { color: 'rgba(232,229,223,0.12)' } },
+      axisLabel: { color: '#9a978f' }
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: 'rgba(232,229,223,0.06)' } },
+      axisLabel: { color: '#9a978f', formatter: 'R$ {value}' }
+    },
+    series: [
+      {
+        name: 'Receita',
+        type: 'line',
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: { color: '#c47046', width: 3 },
+        itemStyle: { color: '#c47046' },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(196,112,70,0.3)' },
+            { offset: 1, color: 'rgba(196,112,70,0.01)' }
+          ])
+        },
+        data: [1250, 1580, 1890, 2100, 2450, 2890]
+      }
+    ]
+  };
+  
+  chartReceita.setOption(option);
+}
+
+function initChartStatus() {
+  const el = document.getElementById('chartStatus');
+  if (!el) return;
+  
+  if (chartStatus) chartStatus.dispose();
+  chartStatus = echarts.init(el);
+  
+  const ativos = dados.clientes.filter(c => c.status === 'active').length;
+  const pendentes = dados.clientes.filter(c => c.status === 'pending').length;
+  const vencidos = dados.clientes.filter(c => c.status === 'expired').length;
+  const inativos = dados.clientes.filter(c => c.status === 'inactive').length;
+  
+  const option = {
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: '#2a2a2f',
+      borderColor: 'rgba(232,229,223,0.12)',
+      textStyle: { color: '#e8e5df' }
+    },
+    legend: {
+      orient: 'horizontal',
+      bottom: '0%',
+      textStyle: { color: '#9a978f', fontSize: 11 }
+    },
+    series: [
+      {
+        name: 'Status',
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['50%', '42%'],
+        avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#2a2a2f',
+          borderWidth: 2
+        },
+        label: { show: false },
+        emphasis: {
+          label: { show: true, fontSize: 14, fontWeight: 'bold', color: '#e8e5df' }
+        },
+        labelLine: { show: false },
+        data: [
+          { value: ativos, name: 'Ativos', itemStyle: { color: '#25D366' } },
+          { value: pendentes, name: 'Pendentes', itemStyle: { color: '#f59e0b' } },
+          { value: vencidos, name: 'Vencidos', itemStyle: { color: '#ef4444' } },
+          { value: inativos, name: 'Inativos', itemStyle: { color: '#6b7280' } }
+        ]
+      }
+    ]
+  };
+  
+  chartStatus.setOption(option);
+}
+
+function initChartPlanos() {
+  const el = document.getElementById('chartPlanos');
+  if (!el) return;
+  
+  if (chartPlanos) chartPlanos.dispose();
+  chartPlanos = echarts.init(el);
+  
+  const contagem = {};
+  dados.planos.forEach(p => contagem[p.nome] = 0);
+  dados.clientes.forEach(c => {
+    if (contagem[c.plano] !== undefined) contagem[c.plano]++;
+  });
+  
+  const nomes = Object.keys(contagem);
+  const valores = Object.values(contagem);
+  
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#2a2a2f',
+      borderColor: 'rgba(232,229,223,0.12)',
+      textStyle: { color: '#e8e5df' }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '5%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'value',
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: { lineStyle: { color: 'rgba(232,229,223,0.06)' } },
+      axisLabel: { color: '#9a978f' }
+    },
+    yAxis: {
+      type: 'category',
+      data: nomes,
+      axisLine: { lineStyle: { color: 'rgba(232,229,223,0.12)' } },
+      axisLabel: { color: '#9a978f' }
+    },
+    series: [
+      {
+        type: 'bar',
+        data: valores.map((v, i) => ({
+          value: v,
+          itemStyle: {
+            color: i % 2 === 0 ? '#c47046' : '#7ba8b8',
+            borderRadius: [0, 6, 6, 0]
+          }
+        })),
+        barWidth: '50%',
+        label: {
+          show: true,
+          position: 'right',
+          color: '#e8e5df',
+          fontWeight: 'bold'
         }
-        function toggleModal(id) {
-            document.getElementById(id).classList.toggle('hidden');
-        }
+      }
+    ]
+  };
+  
+  chartPlanos.setOption(option);
+}
 
-        // Define o filtro clicando nas abas do dashboard
-        function definirFiltro(tipo) {
-            filtroAtual = tipo;
-            
-            // Gerencia classes visuais dos cards clicados
-            document.querySelectorAll('[id^="card-filtro-"]').forEach(card => card.classList.remove('active-filter'));
-            document.getElementById(`card-filtro-${tipo}`).classList.add('active-filter');
+function renderizarVencimentos() {
+  const container = document.getElementById('listaVencimentos');
+  const hoje = new Date();
+  const limite = new Date();
+  limite.setDate(limite.getDate() + 7);
+  
+  const proximos = dados.clientes
+    .filter(c => {
+      const venc = new Date(c.vencimento + 'T00:00:00');
+      return venc >= hoje && venc <= limite;
+    })
+    .sort((a, b) => new Date(a.vencimento) - new Date(b.vencimento))
+    .slice(0, 5);
+  
+  if (proximos.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-8 text-muted">
+        <i class="ri-calendar-check-line text-3xl mb-2"></i>
+        <p class="text-sm">Nenhum vencimento nos próximos 7 dias</p>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = proximos.map(c => {
+    const venc = new Date(c.vencimento + 'T00:00:00');
+    const diff = Math.ceil((venc - hoje) / (1000 * 60 * 60 * 24));
+    const textoDiff = diff === 0 ? 'Hoje' : diff === 1 ? 'Amanhã' : `Em ${diff} dias`;
+    
+    return `
+      <div class="flex items-center gap-3 p-3 bg-[var(--bg)] rounded-xl">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--accent2)] flex items-center justify-center font-bold text-sm">
+          ${c.nome.charAt(0).toUpperCase()}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-medium text-sm truncate">${c.nome}</p>
+          <p class="text-xs text-muted">${c.plano}</p>
+        </div>
+        <div class="text-right">
+          <p class="text-xs font-medium ${diff <= 2 ? 'text-red-400' : 'text-[var(--accent)]'}">${textoDiff}</p>
+          <p class="text-xs text-muted">${venc.toLocaleDateString('pt-BR')}</p>
+        </div>
+        <button class="btn-whatsapp !p-2" onclick="abrirWhatsApp(${c.id})">
+          <i class="ri-whatsapp-line"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+}
 
-            const aviso = document.getElementById('filtro-aviso');
-            const nomeFiltro = document.getElementById('filtro-nome');
-            
-            if(tipo === 'todos') {
-                aviso.classList.add('hidden');
-            } else {
-                aviso.classList.remove('hidden');
-                nomeFiltro.innerText = tipo === 'pago' ? 'Já Recebidos' : tipo === 'hoje' ? 'Vencendo Hoje' : 'Em Atraso';
-            }
+// Redimensionar gráficos
+window.addEventListener('resize', () => {
+  if (chartReceita) chartReceita.resize();
+  if (chartStatus) chartStatus.resize();
+  if (chartPlanos) chartPlanos.resize();
+});
 
-            renderizarSistema();
-        }
+// ============================================
+// INICIALIZAÇÃO
+// ============================================
+document.addEventListener('DOMContentLoaded', () => {
+  initDashboard();
+  renderizarClientes();
+  renderizarPlanos();
+  renderizarTemplates();
+});
 
-        // Processa dados e desenha a tela inteira
-        function renderizarSistema() {
-            const tabela = document.getElementById('tabela-itens');
-            tabela.innerHTML = '';
+// Fechar modais ao clicar fora
+document.querySelectorAll('.modal').forEach(modal => {
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('active');
+    }
+  });
+});
+</script>
 
-            let totalTodos = 0, totalPagos = 0, totalHoje = 0, totalAtrasados = 0;
-            const hojeStr = new Date().toISOString().split('T')[0];
-
-            bdVendas.forEach(item => {
-                // Cálculo inteligente de status por item
-                let status = 'pendente';
-                if (item.pago) {
-                    status = 'pago';
-                } else if (item.data < hojeStr) {
-                    status = 'atrasado';
-                } else if (item.data === hojeStr) {
-                    status = 'hoje';
-                }
-
-                // Somatórios para a Dashboard
-                totalTodos += item.valor;
-                if (status === 'pago') totalPagos += item.valor;
-                if (status === 'hoje') totalHoje += item.valor;
-                if (status === 'atrasado') totalAtrasados += item.valor;
-
-                // Regra do Filtro Ativo
-                if (filtroAtual !== 'todos' && filtroAtual !== status) return;
-
-                // Definição de cores e badges baseados nos critérios pedidos
-                let badgeStyle = '', statusTxt = '';
-                if(status === 'pago') {
-                    badgeStyle = 'bg-emerald-100 text-emerald-700 border-emerald-200';
-                    statusTxt = 'Recebido';
-                } else if(status === 'hoje') {
-                    badgeStyle = 'bg-amber-100 text-amber-700 border-amber-200 animate-pulse';
-                    statusTxt = 'Vence Hoje';
-                } else if(status === 'atrasado') {
-                    badgeStyle = 'bg-rose-100 text-rose-700 border-rose-200';
-                    statusTxt = 'Atrasado';
-                } else {
-                    badgeStyle = 'bg-slate-100 text-slate-600 border-slate-200';
-                    statusTxt = 'Agendado';
-                }
-
-                // Criação do link do WhatsApp dinâmico trazendo os valores e itens comprados
-                const textoWhats = encodeURIComponent(`Olá ${item.cliente}, tudo bem? Passando para lembrar do agendamento referente à compra de *${item.produto}* no valor de *${formatarGrana(item.valor)}* com vencimento em *${formatarDataBR(item.data)}*. \nObs: ${item.obs || 'Nenhuma'}`);
-                const linkZap = `https://wa.me/${item.whats.replace(/\D/g, '')}?text=${textoWhats}`;
-
-                // Renderiza a linha na tabela
-                tabela.innerHTML += `
-                    <tr class="hover:bg-slate-50 transition-colors">
-                        <td class="px-4 py-4 font-semibold text-slate-900">${item.cliente}</td>
-                        <td class="px-4 py-4 text-slate-600 max-w-[200px] truncate" title="${item.produto}">
-                            <span class="font-medium block">${item.produto}</span>
-                            <span class="text-xs text-slate-400 block truncate">${item.obs || 'Sem obs'}</span>
-                        </td>
-                        <td class="px-4 py-4 text-slate-600 font-medium">${formatarDataBR(item.data)}</td>
-                        <td class="px-4 py-4 font-bold text-slate-900">${formatarGrana(item.valor)}</td>
-                        <td class="px-4 py-4">
-                            <span class="px-2 py-1 text-xs border rounded-full font-bold inline-block ${badgeStyle}">${statusTxt}</span>
-                        </td>
-                        <td class="px-4 py-4 text-center space-x-2">
-                            ${!item.pago ? `
-                                <button onclick="darBaixaPagamento(${item.id})" class="bg-emerald-50 hover:bg-emerald-600 text-emerald-700 hover:text-white px-2.5 py-1.5 rounded-lg border border-emerald-200 text-xs font-bold transition-all" title="Marcar como Pago">Baixar</button>
-                            ` : `
-                                <span class="text-xs text-slate-400 font-medium inline-block">Concluído</span>
-                            `}
-                            
-                            <a href="${linkZap}" target="_blank" class="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-lg shadow-sm transition-all" title="Cobrar via WhatsApp">
-                                <i class="ph ph-whatsapp-logo text-lg font-bold"></i>
-                            </a>
-                            
-                            <button onclick="deletarItem(${item.id})" class="text-slate-400 hover:text-rose-500 transition-colors" title="Excluir"><i class="ph ph-trash text-lg"></i></button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            // Atualiza os contadores no topo (Dashboard)
-            document.getElementById('db-todos').innerText = formatarGrana(totalTodos);
-            document.getElementById('db-pagos').innerText = formatarGrana(totalPagos);
-            document.getElementById('db-hoje').innerText = formatarGrana(totalHoje);
-            document.getElementById('db-atrasados').innerText = formatarGrana(totalAtrasados);
-        }
-
-        // Lógica: Cadastrar nova venda
-        function salvarNovaVenda(e) {
-            e.preventDefault();
-
-            // Garante que o telefone possua o código do país caso o usuário esqueça
-            let tel = document.getElementById('addWhats').value.replace(/\D/g, '');
-            if(tel.length === 11 || tel.length === 10) {
-                tel = "55" + tel;
-            }
-
-            const novaVenda = {
-                id: Date.now(),
-                cliente: document.getElementById('addNome').value,
-                whats: tel,
-                produto: document.getElementById('addProduto').value,
-                valor: parseFloat(document.getElementById('addValor').value),
-                data: document.getElementById('addData').value,
-                obs: document.getElementById('addObs').value,
-                pago: false
-            };
-
-            bdVendas.push(novaVenda);
-            salvarNoLocalStorage();
-            document.getElementById('formVenda').reset();
-            toggleModal('modalNovo');
-            renderizarSistema();
-        }
-
-        // Lógica: Mudar status para Pago (Dar baixa)
-        function darBaixaPagamento(id) {
-            const index = bdVendas.findIndex(item => item.id === id);
-            if(index !== -1) {
-                bdVendas[index].pago = true;
-                salvarNoLocalStorage();
-                renderizarSistema();
-            }
-        }
-
-        // Lógica: Deletar item individual
-        function deletarItem(id) {
-            if(confirm("Deseja realmente apagar esta venda permanentemente?")) {
-                bdVendas = bdVendas.filter(item => item.id !== id);
-                salvarNoLocalStorage();
-                renderizarSistema();
-            }
-        }
-
-        // Inicializador automático ao abrir a tela
-        window.onload = () => {
-            renderizarSistema();
-        };
-    </script>
 </body>
 </html>
