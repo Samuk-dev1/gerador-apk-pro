@@ -54,87 +54,83 @@ jobs:
         if: ${{ inputs.arquivo_zip != '' }}
         run: |
           echo "Baixando arquivo ZIP do projeto..."
-          wget -O projeto.zip "${{ inputs.arquivo_zip }}"
+          wget -O projeto.zip "${{ inputs.arquivo_zip }}" || true
+          
           if [ -f projeto.zip ]; then
             echo "Arquivo baixado com sucesso!"
             ls -la projeto.zip
-            # Extrai para pasta temporária
             mkdir -p projeto_extraido
-            unzip -o projeto.zip -d projeto_extraido
+            unzip -o projeto.zip -d projeto_extraido || true
             echo "Conteúdo extraído:"
             find projeto_extraido -maxdepth 3 -type f | head -30
             
-            # Verifica se tem index.html na raiz ou em subpasta
+            mkdir -p www
+            
             if [ -f projeto_extraido/index.html ]; then
               echo "index.html encontrado na raiz do zip"
-              mkdir -p www
               cp -r projeto_extraido/* www/
             else
-              # Procura index.html em subpastas
               INDEX_PATH=$(find projeto_extraido -name "index.html" -type f | head -1)
               if [ -n "$INDEX_PATH" ]; then
                 PASTA=$(dirname "$INDEX_PATH")
                 echo "index.html encontrado em: $PASTA"
-                mkdir -p www
                 cp -r "$PASTA"/* www/
               else
                 echo "⚠️ index.html não encontrado no ZIP! Usando arquivo do repositório."
-                mkdir -p www
-                if [ -f index.html ]; then cp index.html www/; fi
-                if [ -f style.css ]; then cp style.css www/; fi
-                if [ -f script.js ]; then cp script.js www/; fi
+                [ -f index.html ] && cp index.html www/
+                [ -f style.css ] && cp style.css www/
+                [ -f script.js ] && cp script.js www/
               fi
             fi
             rm -rf projeto_extraido projeto.zip
           else
             echo "Falha ao baixar ZIP. Usando arquivos do repositório."
             mkdir -p www
-            if [ -f index.html ]; then cp index.html www/; fi
-            if [ -f style.css ]; then cp style.css www/; fi
-            if [ -f script.js ]; then cp script.js www/; fi
+            [ -f index.html ] && cp index.html www/
+            [ -f style.css ] && cp style.css www/
+            [ -f script.js ] && cp script.js www/
           fi
 
       - name: Copiar arquivos para pasta www (se não veio ZIP)
         if: ${{ inputs.arquivo_zip == '' }}
         run: |
           mkdir -p www
-          if [ -f index.html ]; then cp index.html www/; fi
-          if [ -f style.css ]; then cp style.css www/; fi
-          if [ -f script.js ]; then cp script.js www/; fi
+          [ -f index.html ] && cp index.html www/
+          [ -f style.css ] && cp style.css www/
+          [ -f script.js ] && cp script.js www/
           
-          # Modo Link: injeta iframe no index.html
           if [ -n "${{ inputs.panel_url }}" ]; then
             echo "Modo LINK ativado: ${{ inputs.panel_url }}"
-            cat > www/index.html << 'EOF'
-          <!DOCTYPE html>
-          <html>
-          <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-            iframe { width: 100%; height: 100%; border: none; }
-          </style>
-          </head>
-          <body>
-          <iframe src="${{ inputs.panel_url }}" allow="fullscreen; camera; microphone; geolocation; autoplay"></iframe>
-          </body>
-          </html>
-          EOF
+            cat > www/index.html <<ENDOFHTML
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+iframe { width: 100%; height: 100%; border: none; }
+</style>
+</head>
+<body>
+<iframe src="${{ inputs.panel_url }}" allow="fullscreen; camera; microphone; geolocation; autoplay"></iframe>
+</body>
+</html>
+ENDOFHTML
           fi
 
-      - name: Injetar tags CSS e JS no index.html
+      - name: Injetar tags no index.html
         run: |
           if [ -f www/index.html ]; then
-            # Verifica se já tem as tags necessárias
             if ! grep -q "viewport" www/index.html; then
               sed -i 's/<head>/<head>\n<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">/' www/index.html
             fi
-            if ! grep -q "color-scheme" www/index.html; then
-              sed -i 's/<head>/<head>\n<meta name="color-scheme" content="light dark">/' www/index.html
-            fi
-            echo "index.html preparado com sucesso!"
+            echo "index.html preparado!"
+          else
+            echo "ERRO: www/index.html não existe!"
+            ls -la www/
+            exit 1
           fi
 
       - name: Listar conteúdo da pasta www
@@ -146,45 +142,59 @@ jobs:
       - name: Inicializar e configurar Capacitor
         run: |
           APP_NAME="${{ inputs.app_name }}"
-          APP_ID="com.nexusapk.${APP_NAME,,}"
-          APP_ID="${APP_ID// /-}"
-          APP_ID="${APP_ID//[^a-z0-9.-]/}"
+          APP_ID=$(echo "com.nexusapk.${APP_NAME,,}" | sed 's/ /-/g; s/[^a-z0-9.-]//g')
+          
+          echo "APP_NAME: $APP_NAME"
+          echo "APP_ID: $APP_ID"
           
           npx cap init "$APP_NAME" "$APP_ID" --web-dir=www
           
-          # Configurar capacitor.config.json com Firebase e plugins
-          cat > capacitor.config.json << EOF
-          {
-            "appId": "$APP_ID",
-            "appName": "$APP_NAME",
-            "webDir": "www",
-            "bundledWebRuntime": false,
-            "android": {
-              "allowMixedContent": true
-            },
-            "plugins": {
-              "LocalNotifications": {
-                "smallIcon": "ic_stat_icon_config_sample",
-                "iconColor": "#8b5cf6",
-                "sound": "beep.wav"
-              }
-              EOF
+          # Montar capacitor.config.json
+          FIREBASE_ID="${{ inputs.firebase_sender_id }}"
           
-          # Adiciona configuração do Push se tiver Firebase Sender ID
-          if [ -n "${{ inputs.firebase_sender_id }}" ]; then
-            cat >> capacitor.config.json << EOF
-              ,
-              "PushNotifications": {
-                "presentationOptions": ["badge", "sound", "alert"],
-                "senderId": "${{ inputs.firebase_sender_id }}"
-              }
-            EOF
+          if [ -n "$FIREBASE_ID" ]; then
+            cat > capacitor.config.json <<ENDOFCONFIG
+{
+  "appId": "$APP_ID",
+  "appName": "$APP_NAME",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#8b5cf6",
+      "sound": "beep.wav"
+    },
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"],
+      "senderId": "$FIREBASE_ID"
+    }
+  }
+}
+ENDOFCONFIG
+          else
+            cat > capacitor.config.json <<ENDOFCONFIG
+{
+  "appId": "$APP_ID",
+  "appName": "$APP_NAME",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": true
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#8b5cf6",
+      "sound": "beep.wav"
+    }
+  }
+}
+ENDOFCONFIG
           fi
-          
-          cat >> capacitor.config.json << EOF
-            }
-          }
-          EOF
           
           echo "=== capacitor.config.json ==="
           cat capacitor.config.json
@@ -195,33 +205,54 @@ jobs:
       - name: Configurar permissões no AndroidManifest.xml
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
+          echo "=== AndroidManifest original ==="
+          grep -n "uses-permission" "$MANIFEST"
           
-          # Adiciona permissões necessárias para notificações
+          # Adiciona permissões logo após a permissão INTERNET
           if ! grep -q "POST_NOTIFICATIONS" "$MANIFEST"; then
-            sed -i '/<uses-permission android:name="android.permission.INTERNET" \/>/a\    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>\n    <uses-permission android:name="android.permission.VIBRATE" \/>\n    <uses-permission android:name="android.permission.WAKE_LOCK" \/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" \/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" \/>\n    <uses-permission android:name="android.permission.USE_EXACT_ALARM" \/>' "$MANIFEST"
+            sed -i 's/<uses-permission android:name="android.permission.INTERNET" \/>/<uses-permission android:name="android.permission.INTERNET" \/>\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" \/>\n    <uses-permission android:name="android.permission.VIBRATE" \/>\n    <uses-permission android:name="android.permission.WAKE_LOCK" \/>\n    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" \/>\n    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" \/>/' "$MANIFEST"
           fi
           
-          echo "=== AndroidManifest.xml com permissões ==="
+          echo "=== AndroidManifest com permissões ==="
           grep -n "uses-permission" "$MANIFEST"
 
       - name: Registrar plugins no MainActivity.java
         run: |
-          MAIN="android/app/src/main/java/com/nexusapk/*/MainActivity.java"
           MAIN_FILE=$(find android/app/src/main/java -name "MainActivity.java" | head -1)
+          echo "Arquivo MainActivity: $MAIN_FILE"
           
           if [ -f "$MAIN_FILE" ]; then
-            # Verifica se já tem imports
-            if ! grep -q "LocalNotifications" "$MAIN_FILE"; then
-              sed -i '/import android.os.Bundle;/a\import com.capacitorjs.plugins.localnotifications.LocalNotificationsPlugin;\nimport com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin;' "$MAIN_FILE"
-            fi
-            
-            # Verifica se já tem registro dos plugins
-            if ! grep -q "LocalNotificationsPlugin" "$MAIN_FILE"; then
-              sed -i 's/public class MainActivity extends BridgeActivity {/public class MainActivity extends BridgeActivity {\n    @Override\n    public void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        registerPlugin(LocalNotificationsPlugin.class);\n        registerPlugin(PushNotificationsPlugin.class);\n    }/' "$MAIN_FILE"
-            fi
-            
-            echo "=== MainActivity.java atualizado ==="
+            echo "=== Conteúdo original ==="
             cat "$MAIN_FILE"
+            
+            # Cria um novo MainActivity.java do zero, mais seguro
+            PACKAGE_LINE=$(head -1 "$MAIN_FILE")
+            
+            cat > "$MAIN_FILE" <<ENDOFJAVA
+$PACKAGE_LINE
+
+import android.os.Bundle;
+import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.Plugin;
+import com.capacitorjs.plugins.localnotifications.LocalNotificationsPlugin;
+import com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin;
+import java.util.ArrayList;
+
+public class MainActivity extends BridgeActivity {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        registerPlugin(LocalNotificationsPlugin.class);
+        registerPlugin(PushNotificationsPlugin.class);
+    }
+}
+ENDOFJAVA
+            
+            echo "=== Novo MainActivity.java ==="
+            cat "$MAIN_FILE"
+          else
+            echo "⚠️ MainActivity.java não encontrado!"
+            find android/app/src/main/java -type f
           fi
 
       - name: Gerar ícones do app (se logo enviada)
@@ -229,7 +260,8 @@ jobs:
         run: |
           if [ -f logo.png ]; then
             echo "Gerando ícones a partir de logo.png..."
-            sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq imagemagick
             
             mkdir -p android/app/src/main/res/mipmap-mdpi
             mkdir -p android/app/src/main/res/mipmap-hdpi
@@ -243,7 +275,6 @@ jobs:
             convert logo.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
             convert logo.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
             
-            # Ícones redondos
             convert logo.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
             convert logo.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
             convert logo.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
