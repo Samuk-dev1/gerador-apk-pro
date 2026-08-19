@@ -4,19 +4,96 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestor de Cobrança IPTV</title>
-  <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+:root {
+  --bg-dark: #0f172a;
+  --bg-card: #1e293b;
+  --bg-hover: #334155;
+  --accent: #06b6d4;
+  --accent-soft: #22d3ee33;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --success: #10b981;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #334155;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+body { background: var(--bg-dark); color: var(--text); min-height: 100vh; }
+
+.sidebar { position: fixed; top: 0; left: 0; width: 280px; height: 100vh; background: var(--bg-card); border-right: 1px solid var(--border); transform: translateX(-100%); transition: 0.3s ease; z-index: 1001; overflow-y: auto; }
+.sidebar.open { transform: translateX(0); }
+.sidebar-header { padding: 24px; border-bottom: 1px solid var(--border); color: var(--accent); }
+.sidebar-menu { list-style: none; padding: 12px; }
+.sidebar-menu li a { display: block; padding: 12px 16px; color: var(--text); text-decoration: none; border-radius: 8px; margin: 4px 0; }
+.sidebar-menu li a:hover { background: var(--accent-soft); color: var(--accent); }
+.sidebar-menu .submenu ul { padding-left: 16px; margin-top: 4px; }
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: none; }
+.overlay.active { display: block; }
+
+.header { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: var(--bg-card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+.menu-btn { background: transparent; border: none; color: var(--accent); font-size: 22px; cursor: pointer; }
+
+.main-content { padding: 20px; max-width: 1200px; margin: 0 auto; }
+.screen { display: none; }
+.screen.active { display: block; }
+
+.cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: var(--bg-card); padding: 20px; border-radius: 12px; border-left: 4px solid var(--accent); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.card.warning { border-color: var(--warning); }
+.card.danger { border-color: var(--danger); }
+.card.success { border-color: var(--success); }
+.card h3 { font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+.card-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px; margin-bottom: 24px; }
+.chart-box { background: var(--bg-card); padding: 20px; border-radius: 12px; }
+.chart-box h3 { margin-bottom: 12px; font-size: 15px; color: var(--muted); }
+
+.panel { background: var(--bg-card); padding: 20px; border-radius: 12px; }
+.table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+.table th, .table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+.table th { color: var(--accent); }
+.table tr:hover { background: var(--bg-hover); }
+
+.btn { padding: 10px 16px; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; transition: 0.2s; }
+.btn.primary { background: var(--accent); color: #000; }
+.btn.secondary { background: var(--warning); color: #000; }
+.btn.success { background: var(--success); color: #fff; }
+.btn.danger { background: var(--danger); color: #fff; }
+.btn:hover { filter: brightness(1.1); }
+.btn-sm { padding: 6px 10px; font-size: 13px; margin: 2px; }
+
+.top-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+input, select, textarea { background: var(--bg-dark); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); width: 100%; }
+
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
+.modal.open { display: flex; }
+.modal-content { background: var(--bg-dark); border: 1px solid var(--accent); border-radius: 12px; padding: 24px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; }
+.close { float: right; font-size: 24px; cursor: pointer; color: var(--muted); }
+.form-group { margin-bottom: 14px; }
+.form-group label { display: block; margin-bottom: 6px; font-size: 14px; color: var(--muted); }
+
+.badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+.badge.ativo { background: #10b98133; color: var(--success); }
+.badge.vencendo { background: #f59e0b33; color: var(--warning); }
+.badge.vencido { background: #ef444433; color: var(--danger); }
+
+@media (max-width: 768px) {
+  .charts-grid { grid-template-columns: 1fr; }
+  .table { display: block; overflow-x: auto; }
+}
+  </style>
 </head>
 <body>
-  <!-- Overlay -->
+
   <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
 
-  <!-- Menu Lateral -->
   <nav class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-      <h2>📡 IPTV Manager</h2>
-    </div>
+    <div class="sidebar-header"><h2>📡 IPTV Manager</h2></div>
     <ul class="sidebar-menu">
       <li><a href="#" onclick="showScreen('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</a></li>
       <li><a href="#" onclick="showScreen('clientes')"><i class="fas fa-users"></i> Clientes</a></li>
@@ -32,16 +109,13 @@
     </ul>
   </nav>
 
-  <!-- Cabeçalho -->
   <header class="header">
     <button class="menu-btn" onclick="toggleMenu()"><i class="fas fa-bars"></i></button>
     <h1 id="page-title">Dashboard</h1>
   </header>
 
-  <!-- Conteúdo Principal -->
   <main class="main-content">
 
-    <!-- ========== DASHBOARD ========== -->
     <section id="screen-dashboard" class="screen active">
       <div class="cards-grid">
         <div class="card"><h3>Clientes Ativos</h3><p class="card-value" id="qtd-ativos">0</p></div>
@@ -49,19 +123,16 @@
         <div class="card danger"><h3>Vencidos</h3><p class="card-value" id="qtd-vencidos">0</p></div>
         <div class="card success"><h3>Faturamento Mensal</h3><p class="card-value" id="faturamento">R$ 0,00</p></div>
       </div>
-
       <div class="charts-grid">
         <div class="chart-box"><h3>Status dos Clientes</h3><canvas id="chartStatus"></canvas></div>
         <div class="chart-box"><h3>Vencimentos Últimos 7 Dias</h3><canvas id="chartVenc"></canvas></div>
       </div>
-
       <div class="panel">
         <h3>Últimos Clientes Adicionados</h3>
         <table class="table"><thead><tr><th>Nome</th><th>Vencimento</th><th>Status</th></tr></thead><tbody id="ultimos-clientes"></tbody></table>
       </div>
     </section>
 
-    <!-- ========== CLIENTES ========== -->
     <section id="screen-clientes" class="screen">
       <div class="top-bar">
         <input type="text" id="busca-cliente" placeholder="Buscar por nome ou MAC..." oninput="filtrarClientes()">
@@ -80,7 +151,6 @@
       </table>
     </section>
 
-    <!-- ========== PLANOS ========== -->
     <section id="screen-planos" class="screen">
       <div class="top-bar">
         <button class="btn primary" onclick="abrirModalPlano()"><i class="fas fa-plus"></i> Novo Plano</button>
@@ -91,7 +161,6 @@
       </table>
     </section>
 
-    <!-- ========== TEMPLATES ========== -->
     <section id="screen-templates" class="screen">
       <div class="top-bar">
         <button class="btn primary" onclick="abrirModalTemplate()"><i class="fas fa-plus"></i> Novo Template</button>
@@ -102,7 +171,6 @@
       </table>
     </section>
 
-    <!-- ========== CONFIGURAÇÕES ========== -->
     <section id="screen-configuracoes" class="screen">
       <div class="panel">
         <h3>Dados da Empresa</h3>
@@ -114,7 +182,6 @@
       </div>
     </section>
 
-    <!-- ========== BACKUP ========== -->
     <section id="screen-backup" class="screen">
       <div class="panel">
         <h3>Exportar Backup</h3>
@@ -127,7 +194,6 @@
 
   </main>
 
-  <!-- ========== MODAL CLIENTE ========== -->
   <div class="modal" id="modal-cliente">
     <div class="modal-content">
       <span class="close" onclick="fecharModalCliente()">&times;</span>
@@ -149,7 +215,6 @@
     </div>
   </div>
 
-  <!-- ========== MODAL PLANO ========== -->
   <div class="modal" id="modal-plano">
     <div class="modal-content">
       <span class="close" onclick="fecharModalPlano()">&times;</span>
@@ -162,7 +227,6 @@
     </div>
   </div>
 
-  <!-- ========== MODAL TEMPLATE ========== -->
   <div class="modal" id="modal-template">
     <div class="modal-content">
       <span class="close" onclick="fecharModalTemplate()">&times;</span>
@@ -176,10 +240,315 @@
     </div>
   </div>
 
-  <!-- Capacitor Scripts -->
-  <script src="capacitor.js"></script>
-  <script src="app.js"></scri
-pt>
-</body>
+<script>
+// ========== BANCO LOCAL (IndexedDB) ==========
+let db;
+let chartStatus, chartVenc;
+let cfgEmpresa = { nome: '', contato: '', email: '', pix: '' };
 
+window.onload = async () => {
+  await initBanco();
+  await carregarConfiguracoes();
+  await renderizarDashboard();
+  await renderizarPlanosSelect();
+};
+
+// ========== INICIALIZAÇÃO BANCO ==========
+async function initBanco() {
+  db = await new Promise((res, rej) => {
+    const req = indexedDB.open('IPTVDB', 1);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('config')) {
+        const s = d.createObjectStore('config', {keyPath:'id'});
+        s.add({id:1});
+      }
+      if(!d.objectStoreNames.contains('planos')) d.createObjectStore('planos', {keyPath:'id', autoIncrement:true});
+      if(!d.objectStoreNames.contains('templates')) d.createObjectStore('templates', {keyPath:'id', autoIncrement:true});
+      if(!d.objectStoreNames.contains('clientes')) {
+        const s = d.createObjectStore('clientes', {keyPath:'id', autoIncrement:true});
+        s.createIndex('nome','nome');
+        s.createIndex('mac','mac',{unique:true});
+      }
+    };
+    req.onsuccess = e => res(e.target.result);
+    req.onerror = rej;
+  });
+}
+
+function tx(store, mode='readonly') {
+  return db.transaction(store, mode).objectStore(store);
+}
+function getAll(store) {
+  return new Promise(r => tx(store).getAll().onsuccess = e => r(e.target.result || []));
+}
+function put(store, obj) {
+  return new Promise(r => tx(store,'readwrite').put(obj).onsuccess = r);
+}
+function del(store, id) {
+  return new Promise(r => tx(store,'readwrite').delete(id).onsuccess = r);
+}
+
+// ========== NAVEGAÇÃO ==========
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('active');
+}
+function showScreen(nome) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${nome}`).classList.add('active');
+  document.getElementById('page-title').textContent = {
+    dashboard: 'Dashboard', clientes: 'Clientes', planos: 'Planos',
+    templates: 'Templates', configuracoes: 'Configurações', backup: 'Backup'
+  }[nome] || nome;
+  toggleMenu();
+  if (nome === 'dashboard') renderizarDashboard();
+  if (nome === 'clientes') renderizarClientes();
+  if (nome === 'planos') renderizarPlanos();
+  if (nome === 'templates') renderizarTemplates();
+}
+
+// ========== STATUS ==========
+function calcularStatus(dataVenc) {
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const dt = new Date(dataVenc+'T00:00:00'); dt.setHours(0,0,0,0);
+  const diff = Math.ceil((dt - hoje) / (1000*60*60*24));
+  if (diff < 0) return 'Vencido';
+  if (diff === 0) return 'Vencendo Hoje';
+  return 'Ativo';
+}
+
+// ========== DASHBOARD ==========
+async function renderizarDashboard() {
+  const hoje = new Date().toISOString().split('T')[0];
+  const clis = await getAll('clientes');
+  
+  let ativos = 0, vencHoje = 0, vencidos = 0, faturamento = 0;
+  clis.forEach(c => {
+    const s = calcularStatus(c.data_vencimento);
+    if (s === 'Ativo') { ativos++; faturamento += Number(c.valor); }
+    if (s === 'Vencendo Hoje') vencHoje++;
+    if (s === 'Vencido') vencidos++;
+  });
+
+  document.getElementById('qtd-ativos').textContent = ativos;
+  document.getElementById('qtd-hoje').textContent = vencHoje;
+  document.getElementById('qtd-vencidos').textContent = vencidos;
+  document.getElementById('faturamento').textContent = `R$ ${faturamento.toFixed(2)}`;
+
+  if (chartStatus) chartStatus.destroy();
+  chartStatus = new Chart(document.getElementById('chartStatus'), {
+    type: 'doughnut',
+    data: { labels: ['Ativos', 'Vencendo Hoje', 'Vencidos'], datasets: [{ data: [ativos, vencHoje, vencidos], backgroundColor: ['#10b981','#f59e0b','#ef4444'] }] },
+    options: { responsive:true, plugins: { legend: { labels: { color: '#e2e8f0' } } } }
+  });
+
+  const datas = [], qtds = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() + i);
+    const ds = d.toISOString().split('T')[0];
+    datas.push(d.toLocaleDateString('pt-BR'));
+    qtds.push(clis.filter(c => c.data_vencimento === ds).length);
+  }
+  if (chartVenc) chartVenc.destroy();
+  chartVenc = new Chart(document.getElementById('chartVenc'), {
+    type: 'line',
+    data: { labels: datas, datasets: [{ label: 'Vencimentos', data: qtds, borderColor: '#06b6d4', tension: 0.3, fill: true, backgroundColor: '#06b6d422' }] },
+    options: { responsive:true, plugins: { legend: { labels: { color: '#e2e8f0' } } } },
+    scales: { x: { ticks: { color: '#94a3b8' } }, y: { ticks: { color: '#94a3b8' } } }
+  });
+
+  const ultimos = clis.sort((a,b) => (b.data_cadastro||'') > (a.data_cadastro||'') ? -1 : 1).slice(0,5);
+  document.getElementById('ultimos-clientes').innerHTML = ultimos.map(c => {
+    const sts = calcularStatus(c.data_vencimento);
+    const cls = sts === 'Ativo' ? 'ativo' : sts.startsWith('Vencendo') ? 'vencendo' : 'vencido';
+    return `<tr><td>${c.nome}</td><td>${new Date(c.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR')}</td><td><span class="badge ${cls}">${sts}</span></td></tr>`;
+  }).join('');
+}
+
+// ========== CLIENTES ==========
+async function renderizarClientes(filtro='todos', busca='') {
+  let clis = await getAll('clientes');
+  clis = clis.map(c => ({...c, _statusCalc: calcularStatus(c.data_vencimento)}));
+  if (filtro === 'ativos') clis = clis.filter(c => c._statusCalc === 'Ativo');
+  if (filtro === 'hoje') clis = clis.filter(c => c._statusCalc === 'Vencendo Hoje');
+  if (filtro === 'vencidos') clis = clis.filter(c => c._statusCalc === 'Vencido');
+  if (busca) clis = clis.filter(c => c.nome.toLowerCase().includes(busca.toLowerCase()) || c.mac.includes(busca));
+
+  document.getElementById('lista-clientes').innerHTML = clis.map(c => {
+    const sts = c._statusCalc;
+    const cls = sts === 'Ativo' ? 'ativo' : sts.startsWith('Vencendo') ? 'vencendo' : 'vencido';
+    return `<tr>
+      <td>${c.nome}</td><td>${c.mac}</td><td>${c.plano}</td><td>R$ ${Number(c.valor).toFixed(2)}</td>
+      <td>${new Date(c.data_vencimento+'T00:00:00').toLocaleDateString('pt-BR')}</td>
+      <td><span class="badge ${cls}">${sts}</span></td>
+      <td>
+        <button class="btn-sm" title="Enviar WhatsApp" onclick="enviarWhatsApp('${c.nome}','${c.data_vencimento}','${Number(c.valor).toFixed(2)}')">💬</button>
+        <button class="btn-sm primary" onclick="editarCliente(${c.id})">✏️</button>
+        <button class="btn-sm danger" onclick="excluirCliente(${c.id})">🗑️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+function filtrarClientes() {
+  renderizarClientes(document.getElementById('filtro-status').value, document.getElementById('busca-cliente').value);
+}
+
+function abrirModalCliente(){ document.getElementById('modal-cliente').classList.add('open'); document.getElementById('modal-cliente-titulo').textContent='Adicionar Cliente'; document.getElementById('cli-id').value=''; document.getElementById('cli-nome').value=''; document.getElementById('cli-mac').value=''; document.getElementById('cli-valor').value=''; document.getElementById('cli-vencimento').value=''; document.getElementById('cli-obs').value=''; document.getElementById('cli-status').value='Ativo'; renderizarPlanosSelect(); }
+function fecharModalCliente(){ document.getElementById('modal-cliente').classList.remove('open'); }
+async function renderizarPlanosSelect(){
+  const ps = await getAll('planos');
+  const sel = document.getElementById('cli-plano');
+  sel.innerHTML = ps.map(p=>`<option value="${p.nome}" data-valor="${p.valor}">${p.nome} - R$ ${Number(p.valor).toFixed(2)}</option>`).join('');
+  sel.onchange = ()=>{ const opt = sel.selectedOptions[0]; if(opt) document.getElementById('cli-valor').value = opt.dataset.valor; };
+  sel.onchange();
+}
+async function salvarCliente(){
+  const id = document.getElementById('cli-id').value;
+  const nome = document.getElementById('cli-nome').value.trim();
+  const mac = document.getElementById('cli-mac').value.trim().toUpperCase();
+  const plano = document.getElementById('cli-plano').value;
+  const valor = document.getElementById('cli-valor').value;
+  const data_vencimento = document.getElementById('cli-vencimento').value;
+  const status = document.getElementById('cli-status').value;
+  const obs = document.getElementById('cli-obs').value.trim();
+  if(!/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/.test(mac)) return alert('MAC inválido! Use formato XX:XX:XX:XX:XX:XX');
+  const cliente = {nome, mac, plano, valor:Number(valor), data_vencimento, status, observacao:obs, data_cadastro: new Date().toISOString().slice(0,10)};
+  if(id) cliente.id = Number(id);
+  try { await put('clientes', cliente); } catch { return alert('MAC já cadastrado!'); }
+  fecharModalCliente(); renderizarClientes();
+}
+async function editarCliente(id){
+  const clis = await getAll('clientes');
+  const c = clis.find(x=>x.id===id);
+  if(!c) return;
+  document.getElementById('modal-cliente-titulo').textContent='Editar Cliente';
+  document.getElementById('cli-id').value=c.id;
+  document.getElementById('cli-nome').value=c.nome;
+  document.getElementById('cli-mac').value=c.mac;
+  await renderizarPlanosSelect(); document.getElementById('cli-plano').value=c.plano;
+  document.getElementById('cli-valor').value=c.valor;
+  document.getElementById('cli-vencimento').value=c.data_vencimento;
+  document.getElementById('cli-status').value=c.status;
+  document.getElementById('cli-obs').value=c.observacao||'';
+  document.getElementById('modal-cliente').classList.add('open');
+}
+async function excluirCliente(id){ if(confirm('Excluir cliente?')){ await del('clientes',id); renderizarClientes(); } }
+
+// ========== WHATSAPP ==========
+function enviarWhatsApp(nome, data, valor){
+  const dt = new Date(data+'T00:00:00').toLocaleDateString('pt-BR');
+  const msg = encodeURIComponent(`Olá ${nome}! Tudo bem? 📆 Seu plano IPTV vence em ${dt}. Valor: R$ ${valor}. Favor realizar pagamento. — ${cfgEmpresa.nome||'Empresa'}`);
+  window.open(`https://wa.me/${cfgEmpresa.contato?.replace(/\D/g,'')||''}?text=${msg}`, '_blank');
+}
+
+// ========== PLANOS ==========
+async function renderizarPlanos(){
+  const ps = await getAll('planos');
+  document.getElementById('lista-planos').innerHTML = ps.map(p=>`<tr><td>${p.nome}</td><td>R$ ${Number(p.valor).toFixed(2)}</td><td>${p.dias} dias</td><td><button class="btn-sm danger" onclick="excluirPlano(${p.id})">🗑️</button></td></tr>`).join('');
+}
+function abrirModalPlano(){ document.getElementById('modal-plano').classList.add('open'); document.getElementById('plano-id').value=''; document.getElementById('plano-nome').value=''; document.getElementById('plano-valor').value=''; document.getElementById('plano-dias').value=''; }
+function fecharModalPlano(){ document.getElementById('modal-plano').classList.remove('open'); }
+async function salvarPlano(){
+  const id = document.getElementById('plano-id').value;
+  const nome = document.getElementById('plano-nome').value.trim();
+  const valor = document.getElementById('plano-valor').value;
+  const dias = document.getElementById('plano-dias').value;
+  const plano = {nome, valor:Number(valor), dias:Number(dias)};
+  if(id) plano.id = Number(id);
+  await put('planos', plano);
+  fecharModalPlano(); renderizarPlanos(); renderizarPlanosSelect();
+}
+async function excluirPlano(id){ if(confirm('Excluir plano?')){ await del('planos',id); renderizarPlanos(); } }
+
+// ========== TEMPLATES ==========
+async function renderizarTemplates(){
+  const ts = await getAll('templates');
+  document.getElementById('lista-templates').innerHTML = ts.map(t=>`<tr><td>${t.nome}</td><td style="max-width:400px;overflow:hidden;font-size:13px;">${t.mensagem}</td><td><button class="btn-sm danger" onclick="excluirTemplate(${t.id})">🗑️</button></td></tr>`).join('');
+}
+function abrirModalTemplate(){ document.getElementById('modal-template').classList.add('open'); document.getElementById('tpl-nome').value=''; document.getElementById('tpl-mensagem').value='Olá {nome}, seu plano IPTV vence em {data}. Valor: {valor}. Renove com {empresa}!'; }
+function fecharModalTemplate(){ document.getElementById('modal-template').classList.remove('open'); }
+async function salvarTemplate(){
+  const nome = document.getElementById('tpl-nome').value.trim();
+  const mensagem = document.getElementById('tpl-mensagem').value.trim();
+  await put('templates', {nome, mensagem});
+  fecharModalTemplate(); renderizarTemplates();
+}
+async function excluirTemplate(id){ if(confirm('Excluir template?')){ await del('templates',id); renderizarTemplates(); } }
+
+// ========== CONFIGURAÇÕES ==========
+async function carregarConfiguracoes(){
+  const cfg = await new Promise(r => tx('config').get(1).onsuccess = e => r(e.target.result || {}));
+  cfgEmpresa = {
+    nome: cfg.nome_empresa || '',
+    contato: cfg.contato || '',
+    email: cfg.email || '',
+    pix: cfg.chave_pix || ''
+  };
+  document.getElementById('cfg-nome').value = cfgEmpresa.nome;
+  document.getElementById('cfg-contato').value = cfgEmpresa.contato;
+  document.getElementById('cfg-email').value = cfgEmpresa.email;
+  document.getElementById('cfg-pix').value = cfgEmpresa.pix;
+}
+async function salvarConfiguracoes(){
+  cfgEmpresa.nome = document.getElementById('cfg-nome').value.trim();
+  cfgEmpresa.contato = document.getElementById('cfg-contato').value.trim();
+  cfgEmpresa.email = document.getElementById('cfg-email').value.trim();
+  cfgEmpresa.pix = document.getElementById('cfg-pix').value.trim();
+  await put('config', {id:1, nome_empresa:cfgEmpresa.nome, contato:cfgEmpresa.contato, email:cfgEmpresa.email, chave_pix:cfgEmpresa.pix});
+  alert('Salvo!');
+}
+
+// ========== BACKUP ==========
+async function exportarBackup(){
+  const dados = {
+    exportadoEm: new Date().toISOString(),
+    configuracoes: cfgEmpresa,
+    clientes: await getAll('clientes'),
+    planos: await getAll('planos'),
+    templates: await getAll('templates')
+  };
+  const blob = new Blob([JSON.stringify(dados,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `backup-iptv-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+async function importarBackup(e){
+  const f = e.target.files?.[0]; if(!f) return;
+  const texto = await f.text();
+  try {
+    const d = JSON.parse(texto);
+    if(d.configuracoes) await put('config', {id:1, nome_empresa:d.configuracoes.nome, contato:d.configuracoes.contato, email:d.configuracoes.email, chave_pix:d.configuracoes.pix});
+    if(d.planos) { for(const p of d.planos) delete p.id, await put('planos',p); }
+    if(d.templates) { for(const t of d.templates) delete t.id, await put('templates',t); }
+    if(d.clientes) { for(const c of d.clientes) delete c.id, await put('clientes',c); }
+    alert('Importado com sucesso!');
+    location.reload();
+  }catch(err){ alert('Arquivo inválido!'); }
+}
+
+// ========== NOTIFICAÇÕES ==========
+async function verificarVencimentosEEnviar(){
+  const hoje = new Date().toISOString().split('T')[0];
+  const clis = await getAll('clientes');
+  const vencHoje = clis.filter(c => c.data_vencimento === hoje);
+  if(vencHoje.length === 0) {
+    alert('✅ Nenhum cliente vencendo hoje!');
+    return;
+  }
+  if('Notification' in window && Notification.permission === 'granted') {
+    new Notification('📆 Lembrete IPTV', { body: `Hoje você tem ${vencHoje.length} cliente(s) vencendo!`, icon: 'https://cdn-icons-png.flaticon.com/512/2659/2659960.png' });
+  } else if('Notification' in window && Notification.permission !== 'denied') {
+    Notification.requestPermission().then(p => {
+      if(p==='granted') new Notification('📆 Lembrete IPTV', { body: `Hoje você tem ${vencHoje.length} cliente(s) vencendo!` });
+    });
+  }
+  alert(`📆 ${vencHoje.length} cliente(s) vencendo hoje!`);
+}
+async function dispararNotificacao(){
+  await verificarVencimentosEEnviar();
+}
+</script>
+</body>
 </html>
